@@ -9,32 +9,47 @@ def isNegative(x):
         return False
     
 def isSmall(x):
-    if x[0] == '0':
-        return True
-    else:
-        return False
+    if type(x)==str:
+        if x[0] == '0':
+            return True
+        else:
+            return False
+    elif type(x)== float:
+        if x < 0.1:
+            return True
+        else:
+            return False
 def logic(x, y):
     if len(y) == 1:
         y = y + '0'
-    if isNegative(x) == True and isSmall(y) == False:
+    if (isNegative(x) == True and isSmall(y) == False):
         y = '1' + y
-    elif isNegative(x) == True and isSmall(y) == True:
+    elif (isNegative(x) == True and isSmall(y) == True):
         Imp = y[-1]
         y = '21' + Imp
-    elif isNegative == False and isSmall == True:
-        y = '2' + y
+    elif (isNegative(x) == False and isSmall(y) == True):
+        y = '2' + y  
     else:
         y = y
     return x, y
 
 def coding(x):
     x = x.round(2)
+    
     whole, dec = str(x).split(".")
     whole, dec = logic(whole, dec)
+    if x == -1:
+        print(f"1st: x = {x}, whole = {whole}, dec = {dec}")
     whole = int(whole)
     dec = int(dec)
+    if x == -1:
+        print(f"2nd: x = {x}, whole = {whole}, dec = {dec}")
+    
     if whole < 0:
-        whole = ~whole
+        whole = whole*(-1)
+    if x == -1:
+        print(f"3rd: x = {x}, whole = {whole}, dec = {dec}")
+    
     return (whole, dec)
 
 def float_maker(x, y):
@@ -67,16 +82,14 @@ def decoding(x, y):
         x = str(x)
         y = str(y)
         num = (x+".0"+y)
-        print(num)
         num = float(num)
-        return (num*(-1))
+        return num
     elif (y>= 210 and y < 220):
         
-        y = y -210
+        y = y - 210
         x = str(x)
         y = str(y)
         num = (x+".0"+y)
-        print(num)
         num = float(num)
         return (num*(-1))
     #print(f"decoding: x = {x}, y = {y}")
@@ -88,7 +101,7 @@ def podziel_liste(lista, rozmiar):
 
 
 tablica = np.linspace(-np.pi, np.pi, 160)
-tablica = np.sin(tablica)
+tablica = np.sin(tablica)*2
 
 list_to_send = list()
 
@@ -104,8 +117,11 @@ for elem in list_to_send:
         num = decoding(data[0], data[1])
         list_check.append(num)
 
-for i in range(len(list_check)):
-    print(f"{list_check[i]} = {list_to_check[i]}")
+for i in range(len(list_check)-130):
+    #print(f"{list_check[i+30]} = {list_to_check[i+30]} = {tablica[i+30]}")
+    pass
+
+
 
 plt.plot(list_check)
 plt.show()
