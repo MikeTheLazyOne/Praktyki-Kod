@@ -2,36 +2,97 @@ import os, time, can
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
-
-def twos_complement(x):
+def isNegative(x):
+    if x[0] == '-':
+        return True
+    else:
+        return False
     
-    if x<0 and x > -127:
-        x = ~x
-        x = x+129
-        return (bin(x))
-    elif (x < -127):
-        print("Error invalid value")
-        return(bin(0))
-    elif(x<128):
-        return (bin(x))
+def isSmall(x):
+    if type(x)==str:
+        if x[0] == '0':
+            return True
+        else:
+            return False
+    elif type(x)== float:
+        if x < 0.1:
+            return True
+        else:
+            return False
+def logic(x, y):
+    if len(y) == 1:
+        y = y + '0'
+    if (isNegative(x) == True and isSmall(y) == False):
+        y = '1' + y
+    elif (isNegative(x) == True and isSmall(y) == True):
+        Imp = y[-1]
+        y = '21' + Imp
+    elif (isNegative(x) == False and isSmall(y) == True):
+        y = '2' + y  
+    else:
+        y = y
+    return x, y
+
+def coding(x):
+    x = x.round(2)
     
-def reverse_twos_complement(x):
-    if type(x) != int:
-        x = int(x, 2)
-    if x >=128:
-        x = x-129
-        x = ~x
-    return x
+    whole, dec = str(x).split(".")
+    whole, dec = logic(whole, dec)
+    whole = int(whole)
+    dec = int(dec)
+    
+    if whole < 0:
+        whole = whole*(-1)
+    
+    return (whole, dec)
 
-def podziel_liste(lista, rozmiar):
-    return[lista[i:i+rozmiar] for i in range(0,len(lista), rozmiar)]
-
-def odpakowacz(x, y):
+def float_maker(x, y):
     x = str(x)
     y = str(y)
     num = (x+"."+y)
     
     return float(num)
+
+
+def decoding(x, y):
+    num = float()
+    if type(x) != int:
+        x = int(x, 2)
+
+    if type(y) != int:
+        y = int(y, 2)
+    
+    if (y >= 0 and y < 100):
+        num = float_maker(x, y)
+        return num
+    elif (y >= 100 and y < 200):
+        
+        y = y - 100
+        num = float_maker(x, y)
+        return (num*(-1))
+    elif (y >= 200 and y < 210):
+        
+        y = y - 200
+        x = str(x)
+        y = str(y)
+        num = (x+".0"+y)
+        num = float(num)
+        return num
+    elif (y>= 210 and y < 220):
+        
+        y = y - 210
+        x = str(x)
+        y = str(y)
+        num = (x+".0"+y)
+        num = float(num)
+        return (num*(-1))
+    #print(f"decoding: x = {x}, y = {y}")
+    print("You are in ShitHole")
+
+def podziel_liste(lista, rozmiar):
+    return[lista[i:i+rozmiar] for i in range(0,len(lista), rozmiar)]
+
+
 
 
 os.system('sudo ip link set can0 type can bitrate 100000')
@@ -69,12 +130,11 @@ while (True):
         #num_of_data = int(msg.dlc/2)
         for i in range(int(msg.dlc/2)):
             
-            num = reverse_twos_complement(msg.data[(i*2)+0])
-            dec = reverse_twos_complement(msg.data[(i*2)+1])
-            element = odpakowacz(num, dec)
+            num = decoding(msg.data[(i*2)+0],msg.data[(i*2)+1])
+            
             
             lista = list()
-            lista.append(element)
+            lista.append(num)
             list_to_plot = list_to_plot[1:] + lista
         print(msg)
                 
