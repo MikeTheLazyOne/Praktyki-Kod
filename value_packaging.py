@@ -38,17 +38,11 @@ def coding(x):
     
     whole, dec = str(x).split(".")
     whole, dec = logic(whole, dec)
-    if x == -1:
-        print(f"1st: x = {x}, whole = {whole}, dec = {dec}")
     whole = int(whole)
     dec = int(dec)
-    if x == -1:
-        print(f"2nd: x = {x}, whole = {whole}, dec = {dec}")
     
     if whole < 0:
         whole = whole*(-1)
-    if x == -1:
-        print(f"3rd: x = {x}, whole = {whole}, dec = {dec}")
     
     return (whole, dec)
 
