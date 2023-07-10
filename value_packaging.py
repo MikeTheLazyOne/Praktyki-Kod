@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 def isNegative(x):
     if x[0] == '-':
@@ -29,17 +31,81 @@ def coding(x):
     x = x.round(2)
     whole, dec = str(x).split(".")
     whole, dec = logic(whole, dec)
-    return (int(whole), int(dec))
+    whole = int(whole)
+    dec = int(dec)
+    if whole < 0:
+        whole = ~whole
+    return (whole, dec)
+
+def float_maker(x, y):
+    x = str(x)
+    y = str(y)
+    num = (x+"."+y)
     
-def decoding(x):
-    # ToDo
-    pass
+    return float(num)
+
+
+def decoding(x, y):
+    num = float()
+    if type(x) != int:
+        x = int(x, 2)
+
+    if type(y) != int:
+        y = int(y, 2)
+    
+    if (y >= 0 and y < 100):
+        num = float_maker(x, y)
+        return num
+    elif (y >= 100 and y < 200):
+        
+        y = y - 100
+        num = float_maker(x, y)
+        return (num*(-1))
+    elif (y >= 200 and y < 210):
+        
+        y = y - 200
+        x = str(x)
+        y = str(y)
+        num = (x+".0"+y)
+        print(num)
+        num = float(num)
+        return (num*(-1))
+    elif (y>= 210 and y < 220):
+        
+        y = y -210
+        x = str(x)
+        y = str(y)
+        num = (x+".0"+y)
+        print(num)
+        num = float(num)
+        return (num*(-1))
+    #print(f"decoding: x = {x}, y = {y}")
+    print("You are in ShitHole")
+
+def podziel_liste(lista, rozmiar):
+    return[lista[i:i+rozmiar] for i in range(0,len(lista), rozmiar)]
+
+
 
 tablica = np.linspace(-np.pi, np.pi, 160)
 tablica = np.sin(tablica)
 
 list_to_send = list()
-print(f"Co z tobą jest nie tak {tablica[5]}")
+
 for value in tablica:
     list_to_send.append(coding(value))
-print(list_to_send)
+list_to_check = list_to_send
+list_to_send = podziel_liste(list_to_send, 4)
+list_check = list()
+for elem in list_to_send:
+    for data in elem:
+        #print(type(data[0]))
+        
+        num = decoding(data[0], data[1])
+        list_check.append(num)
+
+for i in range(len(list_check)):
+    print(f"{list_check[i]} = {list_to_check[i]}")
+
+plt.plot(list_check)
+plt.show()
