@@ -92,7 +92,7 @@ def main():
         pack = list()
         for data in messages:
             pack.append(int(data[0]))
-            pack.append((data[1]))
+            pack.append(int(data[1]))
         msg = can.Message(arbitration_id=0x123, data=bytearray(pack), is_extended_id=False)
         buff.append(msg)
 
