@@ -13,58 +13,33 @@ debug = 0
 
 class Worker(QObject):
     RecvMessage = Signal(list)
-    NotRecvMessage = Signal(list)
+   
 
     def __init__(self, szef):
         super().__init__()
         self.szef = szef
 
-    @Slot(list)
-    def Talking(self):
+    @Slot(int)
+    def Talking(self,v):
         print("talk talk")
-        os.system('sudo ip link set can0 type can bitrate 100000')
-        os.system('sudo ifconfig can0 up')
-
-        can0 = can.interface.Bus(channel = 'can0', bustype = 'socketcan')# socketcan_native
-
-        msg = can0.recv(1)
-        
-        tok = time.time()
-
-        while (True):
-    
-            msg = can0.recv(1)
-            
-            lista = list(0 for i in range(4))
-            
-            if msg is None:
-                tik = time.time()
-
-                lista = (0 for i in range(4))
-                lista = lista[1:] + lista
-        
-                self.RecvMessage.emit(lista)
-                print(f'Timeout occurred, no message.Time since last message:{tik-tok}')
-            else:
-                tok = time.time()
-                
-                for i in range(int(msg.dlc/2)):
-                    
-                    num = decoding(msg.data[(i*2)+0],msg.data[(i*2)+1])
-                    
-                    lista.append(num)
-                    lista = lista[1:] + lista
-                    self.RecvMessage.emit(lista)
-                    
-                print(msg)
-
-        os.system('sudo ifconfig can0 down')
-                
+        tablica = np.linspace(-np.pi, np.pi, 161)
+        tablica = np.sin(tablica)*2
+        lista = list(round(elem,2) for elem in tablica)
+        lista = podziel_liste(lista, 4)
+        counter = 0
+        while (v == 1):
+            time.sleep(0.8)
+            self.RecvMessage.emit(lista[counter])
+            counter += 1
+            if counter == 40:
+                counter = 0               
 class MplCanvas(FigureCanvasQTAgg):
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
+        self.axes = fig.add_subplot(1,1,1)
+        # self.axes.set_animated(True)
+        self.axes.set_ylim(2,-2)
         super(MplCanvas, self).__init__(fig)
 
 class RightBar(QWidget):
@@ -73,7 +48,7 @@ class RightBar(QWidget):
         super().__init__()
         self.usecase = usecase
         self.button = QPushButton("Refresh")
-        
+       
         self._buttonoption()
         self.status = self.button.isChecked()
 
@@ -88,7 +63,7 @@ class RightBar(QWidget):
         self.max_input = QLineEdit()
 
         self._labeloption()
-        
+       
 
         self.timer = QTimer()
         self.timer.setInterval(400)
@@ -97,10 +72,10 @@ class RightBar(QWidget):
 
         self._layoutoption()
 
-        
+       
 
     def _labeloption(self):
-        
+       
         self.average.setAlignment(Qt.AlignRight)
         self.median.setAlignment(Qt.AlignRight)
         self.max.setAlignment(Qt.AlignRight)
@@ -111,7 +86,7 @@ class RightBar(QWidget):
         self.max.setMinimumSize(150, 30)
         self.min.setMinimumSize(150, 30)
 
-        
+       
 
     def _buttonwork(self):
         self.status = self.button.isChecked()
@@ -136,23 +111,24 @@ class RightBar(QWidget):
         self.layout.addRow(self.median, self.median_input)
         self.layout.addRow(self.max, self.max_input)
         self.layout.addRow(self.min, self.min_input)
-        
-        
+       
+       
         self.setLayout(self.layout)
-        
+       
     def update_labels(self):
-        
+       
         if self.get_button_status() == True:
             self.average_input.setText(f"{round(np.average(self.usecase.get_ydata()), 2)}")
             self.median_input.setText(f"{round(np.median(self.usecase.get_ydata()), 2)}")
             self.max_input.setText(f"{round(np.max(self.usecase.get_ydata()), 2)}")
             self.min_input.setText(f"{round(np.min(self.usecase.get_ydata()), 2)}")
-            
+           
         else:
             if debug == 1:
                 print("Refresh is off")
 
 class MainWindow(QMainWindow):
+    talking = Signal(int)
     def __init__(self):
         super().__init__()
         self.setWindowTitle("My App")
@@ -167,24 +143,30 @@ class MainWindow(QMainWindow):
         self.worker = Worker(self)
         # Thread
         self.worker_thread = QThread()
-        
+       
+       
+       
         self.set_ndata()
 
-        self.ydata = [random.random()*10 for i in range(self.n_data)]
-        
-        self.worker.RecvMessage.connect(self.addData)
+        self.ydata = [0 for i in range(self.n_data)]
+       
+       
 
-        self.update_plot()
-
-        self.timer = QTimer()
-        self.timer.setInterval(400)
-        self.timer.timeout.connect(self.update_plot)
-        self.timer.start()
-
+        self.worker.RecvMessage.connect(self.set_addData)
+       
+        self.talking.connect(self.worker.Talking)
         self.worker.moveToThread(self.worker_thread)
 
+        self.update_plot()
+        self.timer = QTimer()
+        self.timer.setInterval(200)
+        self.timer.timeout.connect(self.update_plot)
+        self.timer.start()
+       
+         
         self.worker_thread.start()
-
+       
+       
        
 
         self._layoutoption()
@@ -196,7 +178,8 @@ class MainWindow(QMainWindow):
         # creating menu bar at top of the app
         self._menumake()
         self.setCentralWidget(widget)
-
+        self.show()
+        self.talking.emit(1)
     def _layoutoption(self):
         self.main_window_layout = QHBoxLayout()
         # adding Widgets to layout
@@ -223,23 +206,24 @@ class MainWindow(QMainWindow):
 
         print("button clicked!\nand it hurts!")
 
-    def update_plot(self, worker_list):
-
+    def update_plot(self):
+       
+       
         tok = time.time()
-        self.set_addData(0,worker_list)
+       
         self.xdata = list(range(self.n_data))
 
         if debug == 1:
             print(type(self.addData))
-        
-        
-
+       
+       
+       
         self.plot.axes.cla()
 
         self.plot.axes.plot(self.xdata, self.ydata, "g")
         if debug == 1:
             print(self.ydata)
-        
+       
         if self.menu_bar.get_button_status() == True:
             self.plot.draw()
         else:
@@ -248,22 +232,24 @@ class MainWindow(QMainWindow):
         tik = time.time()
         if (tik-tok) > 0.4:
             print(f"Failure to be fast enough: {tik-tok}")
-        
+       
     def get_ydata(self):
         return self.ydata
-    def set_addData(self, rand = 0, value = 0):
-        
-        self.addData = list()
-        if rand == 1:
-            self.addData.append(random.random()*10)
+    def set_addData(self, value = 0):
+       
+       
+        if type(value) == list:
+            for data in value:
+                self.ydata.pop(0)
+                self.ydata.append(data)
         else:
+            self.addData = list()
             self.addData.append(value)
+            self.ydata = self.ydata[1:] + self.addData
 
-        self.ydata = self.ydata[1:] + self.addData
-
-    def set_ndata(self, value = 150):
+    def set_ndata(self, value = 160):
         self.n_data = value
-        
+       
 def Average(data):
     value = 0
     if data != None:
@@ -278,7 +264,7 @@ def isNegative(x):
         return True
     else:
         return False
-    
+   
 def isSmall(x):
     if type(x)==str:
         if x[0] == '0':
@@ -290,7 +276,7 @@ def isSmall(x):
             return True
         else:
             return False
-        
+       
 def logic(x, y):
     if len(y) == 1:
         y = y + '0'
@@ -307,22 +293,22 @@ def logic(x, y):
 
 def coding(x):
     x = x.round(2)
-    
+   
     whole, dec = str(x).split(".")
     whole, dec = logic(whole, dec)
     whole = int(whole)
     dec = int(dec)
-    
+   
     if whole < 0:
         whole = whole*(-1)
-    
+   
     return (whole, dec)
 
 def float_maker(x, y):
     x = str(x)
     y = str(y)
     num = (x+"."+y)
-    
+   
     return float(num)
 
 def decoding(x, y):
@@ -332,17 +318,17 @@ def decoding(x, y):
 
     if type(y) != int:
         y = int(y, 2)
-    
+   
     if (y >= 0 and y < 100):
         num = float_maker(x, y)
         return num
     elif (y >= 100 and y < 200):
-        
+       
         y = y - 100
         num = float_maker(x, y)
         return (num*(-1))
     elif (y >= 200 and y < 210):
-        
+       
         y = y - 200
         x = str(x)
         y = str(y)
@@ -350,7 +336,7 @@ def decoding(x, y):
         num = float(num)
         return num
     elif (y>= 210 and y < 220):
-        
+       
         y = y - 210
         x = str(x)
         y = str(y)
