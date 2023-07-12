@@ -36,7 +36,7 @@ class Worker(QObject):
             msg = can0.recv(1)
            
             lista = list()
-           
+            list_to_send = list(range(4))
             if msg is None:
                 tik = time.time()
 
@@ -53,11 +53,11 @@ class Worker(QObject):
                     num = decoding(msg.data[(i*2)+0],msg.data[(i*2)+1])
                    
                     lista.append(num)
-                    list_to_send = list_to_send[1:] + lista
+                    list_to_send = lista
                    
-                self.RecvMessage.emit(lista)    
-                print(list_to_send)
-
+                self.RecvMessage.emit(list_to_send)
+               
+               
         os.system('sudo ifconfig can0 down')
                
 class MplCanvas(FigureCanvasQTAgg):
@@ -65,6 +65,7 @@ class MplCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
+        self.axes.set_ylim(2,-2)
         super(MplCanvas, self).__init__(fig)
 
 class RightBar(QWidget):
@@ -169,16 +170,17 @@ class MainWindow(QMainWindow):
         # Thread
         self.worker_thread = QThread()
        
-        self.talking.connect(self.worker.Talking)
+       
        
         self.set_ndata()
 
-        self.ydata = [random.random()*10 for i in range(self.n_data)]
+        self.ydata = [0 for i in range(self.n_data)]
        
        
 
         self.worker.RecvMessage.connect(self.set_addData)
-
+       
+        self.talking.connect(self.worker.Talking)
         self.worker.moveToThread(self.worker_thread)
 
         self.update_plot()
@@ -186,10 +188,12 @@ class MainWindow(QMainWindow):
         self.timer.setInterval(400)
         self.timer.timeout.connect(self.update_plot)
         self.timer.start()
+       
+         
         self.worker_thread.start()
        
        
-        self.ydata = list(range(150))
+       
 
         self._layoutoption()
 
@@ -239,7 +243,7 @@ class MainWindow(QMainWindow):
             print(type(self.addData))
        
        
-
+       
         self.plot.axes.cla()
 
         self.plot.axes.plot(self.xdata, self.ydata, "g")
@@ -259,12 +263,17 @@ class MainWindow(QMainWindow):
         return self.ydata
     def set_addData(self, value = 0):
        
-        self.addData = list()
-        self.addData.append(value)
+       
+        if type(value) == list:
+            for data in value:
+                self.ydata.pop(0)
+                self.ydata.append(data)
+        else:
+            self.addData = list()
+            self.addData.append(value)
+            self.ydata = self.ydata[1:] + self.addData
 
-        self.ydata = self.ydata[1:] + self.addData
-
-    def set_ndata(self, value = 150):
+    def set_ndata(self, value = 160):
         self.n_data = value
        
 def Average(data):
