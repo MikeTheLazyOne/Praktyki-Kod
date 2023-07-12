@@ -5,18 +5,48 @@ import time
 
 
 class Worker(QObject):
-    progress = Signal(int)
-    completed = Signal(int)
+    RecvMessage = Signal(list)
 
-    @Slot()
-    def do_work(self):
-        for i in range(1, 11):
-            time.sleep(1)
-            self.progress.emit(i)
+    @Slot(int)
+    def Talking(self,v):
+        print("talk talk")
+        os.system('sudo ip link set can0 type can bitrate 100000')
+        os.system('sudo ifconfig can0 up')
 
-        self.completed.emit(i)
+        can0 = can.interface.Bus(channel = 'can0', bustype = 'socketcan')# socketcan_native
 
+        msg = can0.recv(1)
+       
+        tok = time.time()
+        list_to_send = list(range(5))
+        while (v == 1):
+   
+            msg = can0.recv(1)
+           
+            lista = list()
+           
+            if msg is None:
+                tik = time.time()
 
+               
+               
+       
+                self.RecvMessage.emit(lista)
+                print(f'Timeout occurred, no message.Time since last message:{tik-tok}')
+            else:
+                tok = time.time()
+               
+                for i in range(int(msg.dlc/2)):
+                   
+                    num = decoding(msg.data[(i*2)+0],msg.data[(i*2)+1])
+                   
+                    lista.append(num)
+                    list_to_send = list_to_send[1:] + lista
+                   
+                self.RecvMessage.emit(lista)    
+                print(f"List to send = {list_to_send}")
+
+        os.system('sudo ifconfig can0 down')
 class MainWindow(QMainWindow):
     work_requested = Signal()
 
@@ -43,10 +73,8 @@ class MainWindow(QMainWindow):
         self.worker = Worker()
         self.worker_thread = QThread()
 
-        self.worker.progress.connect(self.update_progress)
-        self.worker.completed.connect(self.complete)
-
-        self.work_requested.connect(self.worker.do_work)
+        self.work_requested.connect(self.worker.Talking(1))
+        self.worker.RecvMessage.connect(self.set_addData)
 
         # move worker to the worker thread
         self.worker.moveToThread(self.worker_thread)
@@ -59,17 +87,16 @@ class MainWindow(QMainWindow):
 
     def start(self):
         self.btn_start.setEnabled(False)
-        n = 10
-        self.progress_bar.setMaximum(n)
-        self.work_requested.emit()
+        
+        self.work_requested.emit(1)
 
-    def update_progress(self, v):
-        print("Setting value")
-        self.progress_bar.setValue(v)
+    def set_addData(self, value = 0):
+       
+        print(f"value = {value}")
+        self.addData = list()
+        self.addData.append(value)
 
-    def complete(self, v):
-        self.progress_bar.setValue(v)
-        self.btn_start.setEnabled(True)
+        self.ydata = self.ydata[1:] + self.addData
 
 
 if __name__ == '__main__':
