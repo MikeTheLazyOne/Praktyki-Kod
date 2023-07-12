@@ -136,7 +136,7 @@ while (True):
             lista = list()
             lista.append(num)
             list_to_plot = list_to_plot[1:] + lista
-        print(msg)
+        print(list_to_plot)
                 
     line1.set_ydata(list_to_plot)
     
