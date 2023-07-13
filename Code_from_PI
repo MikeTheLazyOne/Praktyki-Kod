@@ -250,8 +250,7 @@ class MainWindow(QMainWindow):
         if debug == 1:
             print(self.ydata)
        
-        if self.menu_bar.get_button_status() == True:
-            self.plot.draw()
+        
         else:
             if debug == 1:
                 print("Refresh is off")
