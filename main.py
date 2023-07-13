@@ -1,16 +1,15 @@
 import os, sys, random, can
-import typing
 from PyQt5.QtCore import QThread, Qt, QTimer, QObject, pyqtSignal as Signal, pyqtSlot as Slot
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QMenu, QMenuBar,\
     QLabel, QLineEdit, QFormLayout
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
 import time
 import sys
 import numpy as np
 
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
+import pyqtgraph.exporters
+import pyqtgraph
 
 debug = 0
 
@@ -24,7 +23,7 @@ class Worker(QObject):
 
     @Slot(int)
     def Talking(self,v):
-        print("talk talk")
+        print("QThreads start operating")
         tablica = np.linspace(-np.pi, np.pi, 161)
         tablica = np.sin(tablica)*2
         lista = list(round(elem,2) for elem in tablica)
@@ -36,14 +35,6 @@ class Worker(QObject):
             counter += 1
             if counter == 40:
                 counter = 0               
-class MplCanvas(FigureCanvasQTAgg):
-
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(1,1,1)
-        # self.axes.set_animated(True)
-        # self.axes.set_animated(True)
-        super(MplCanvas, self).__init__(fig)
 
 class RightBar(QWidget):
 
@@ -51,7 +42,8 @@ class RightBar(QWidget):
         super().__init__()
         self.usecase = usecase
         self.button = QPushButton("Refresh")
-       
+        self.plot_reset_button = QPushButton("Plot Reset")
+        self.cursor_line = QPushButton("Add Cursor")
         self._buttonoption()
         self.status = self.button.isChecked()
 
@@ -100,9 +92,12 @@ class RightBar(QWidget):
 
     def _buttonoption(self):
         self.button.clicked.connect(lambda: self._buttonwork())
+        self.plot_reset_button.clicked.connect(lambda: self.usecase.plot.getPlotItem().enableAutoRange())
+        self.cursor_line.clicked.connect(lambda : self.usecase.plot.removeItem(self.usecase.line))
         self.button.setCheckable(True)
         self.button.setChecked(True)
-        self.button.setMinimumSize(150, 30)
+        self.button.setFixedSize(300, 30)
+        self.plot_reset_button.setFixedSize(300, 30)
         #self.button.setAligment(Qt.AlignRight)
 
     def _layoutoption(self):
@@ -110,12 +105,13 @@ class RightBar(QWidget):
         self.layout = QFormLayout()
         # adding widgets
         self.layout.addRow(self.button)
+        self.layout.addRow(self.plot_reset_button)
         self.layout.addRow(self.average, self.average_input)
         self.layout.addRow(self.median, self.median_input)
         self.layout.addRow(self.max, self.max_input)
         self.layout.addRow(self.min, self.min_input)
-       
-       
+        self.layout.addRow(self.cursor_line)
+        self.setFixedSize(300, 600)
         self.setLayout(self.layout)
        
     def update_labels(self):
@@ -129,66 +125,91 @@ class RightBar(QWidget):
         else:
             if debug == 1:
                 print("Refresh is off")
-
+    
 class MainWindow(QMainWindow):
     talking = Signal(int)
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("My App")
-        self.setMinimumSize(400, 500)
+
+        self._view()
 
         # RightBar is a class to show information like median or average also later can be used for sending data
         self.menu_bar = RightBar(self)
-
+        # test of reset button
         
-        self.plot = pg.PlotWidget()
-        self.pen = pg.mkPen(color= (255,0,0))
-
-        # Worker
-        self.worker = Worker(self)
-        # Thread
-        self.worker_thread = QThread()
-       
-       
-       
-        self.set_ndata()
-
-        self.ydata = [0 for i in range(self.n_data)]
-       
+        self._plotSetUp()
+        # self.test_btn = QPushButton("reset")
+        # self.test_btn.clicked.connect(lambda: self.plot.getPlotItem().enableAutoRange())
+        self._threadSetUp()
         
-
-        self.worker.RecvMessage.connect(self.set_addData)
-       
-        self.talking.connect(self.worker.Talking)
-        self.worker.moveToThread(self.worker_thread)
-
-        self.data_line =  self.plot.plot(self.xdata, self.ydata, pen=self.pen)
-        
-        self.timer = QTimer()
-        self.timer.setInterval(1)
-        self.timer.timeout.connect(self.update_plot)
-        self.timer.start()
-       
-         
-        self.worker_thread.start()
-       
-       
-       
-
+        self._timerSetUp()
+                
         self._layoutoption()
 
         # Setting Widget for layout to show in center still don't know to make toolbar
         widget = QWidget()
         widget.setLayout(self.main_window_layout)
-
+        self.setCentralWidget(widget)
         # creating menu bar at top of the app
         self._menumake()
-        self.setCentralWidget(widget)
-        self.show()
-        self.talking.emit(1)
+        self.id = 0
+    
+    def notify(self, receiver, event):
+        try:
+            return super().notify(receiver, event)
+        except Exception as e:
+            print("Exception caught:", e)
+            # Dodaj tutaj kod obsługi wyjątku
+            # np. wyświetlanie komunikatu o błędzie, zamykanie aplikacji itp.
+            return False
+    def savePlotToFile(self):
+        
+        pngexporter = pyqtgraph.exporters.ImageExporter(self.plot.plotItem)
+        csvexporter = pyqtgraph.exporters.CSVExporter(self.plot.plotItem)
+        pngexporter.parameters()['width'] = 600
+        pngexporter.export(f'Plot-{self.id}.png')
+        csvexporter.export(f"Data for plot-{self.id}.csv")
+        print(f"file saved with id = {self.id}")
+        self.id += 1
+
+    def _threadSetUp(self):
+        # Worker
+        self.worker = Worker(self)
+        # Thread
+        self.worker_thread = QThread()
+        self.worker.RecvMessage.connect(self.set_addData)
+        self.talking.connect(self.worker.Talking)
+        self.worker.moveToThread(self.worker_thread)
+        self.worker_thread.start()
+        self.talking.emit(1)   
+
+    def _plotSetUp(self):
+        self.plot = pg.PlotWidget()
+        self.pen = pg.mkPen(color= (200,125,60), width = 3)
+        self.CursorPen = pg.mkPen(color = (255,0,0),width = 2, style=Qt.DashLine)
+        self.plot.setBackground('w')
+        self.set_ndata()
+        self.ydata = [0 for i in range(self.n_data)]
+        self.line = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True)
+        
+        self.plot.addItem(self.line)
+        self.data_line =  self.plot.plot(self.xdata, self.ydata, pen=self.pen)    
+        self.plot.setXRange(0,160)
+
+    def _timerSetUp(self):
+        self.timer = QTimer()
+        self.timer.setInterval(100)
+        self.timer.timeout.connect(self.update_plot)
+        self.timer.start()
+
+    def _view(self):
+        self.setWindowTitle("My App")
+        self.setMinimumSize(400, 500)
+
     def _layoutoption(self):
         self.main_window_layout = QHBoxLayout()
         # adding Widgets to layout
+        
         self.main_window_layout.addWidget(self.plot)
         self.main_window_layout.addWidget(self.menu_bar)
         self.main_window_layout.setAlignment(Qt.AlignCenter)
@@ -199,7 +220,7 @@ class MainWindow(QMainWindow):
 
         # creating some toolbars for file and other things
         filemenu = QMenu("&File", self)
-        filemenu.addAction("Save", lambda: print("Plot saved"))
+        filemenu.addAction("Save", lambda : self.savePlotToFile())
         filemenu.addAction("Errors", lambda : print("There are no Errors program runs fine"))
 
         helpmenu = QMenu("&Help", self)
@@ -219,12 +240,12 @@ class MainWindow(QMainWindow):
         if debug == 1:
             print(type(self.addData))
        
-        
-        self.data_line.setData(self.xdata, self.ydata)
-        
+        if self.menu_bar.get_button_status() == True:
+            self.data_line.setData(self.xdata, self.ydata)
+        print(f"line x posttion  = {int(self.line.getPos()[0])}")
+        print(f"line x posttion  = {self.ydata[int(self.line.getPos()[0])]}")
         if debug == 1:
             print(self.ydata)
-        
         
         else:
             if debug == 1:
@@ -233,13 +254,11 @@ class MainWindow(QMainWindow):
         tik = time.time()
         if (tik-tok) > 0.01:
             print(f"Failure to be fast enough: {tik-tok}")
-        print(f"your time is {tik-tok}")
+        
        
     def get_ydata(self):
         return self.ydata
     def set_addData(self, value = 0):
-       
-       
         if type(value) == list:
             for data in value:
                 self.ydata.pop(0)
