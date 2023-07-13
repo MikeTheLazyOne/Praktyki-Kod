@@ -9,6 +9,9 @@ import time
 import sys
 import numpy as np
 
+from pyqtgraph import PlotWidget, plot
+import pyqtgraph as pg
+
 debug = 0
 
 class Worker(QObject):
@@ -28,7 +31,7 @@ class Worker(QObject):
         lista = podziel_liste(lista, 4)
         counter = 0
         while (v == 1):
-            time.sleep(0.8)
+            time.sleep(0.2)
             self.RecvMessage.emit(lista[counter])
             counter += 1
             if counter == 40:
@@ -39,7 +42,7 @@ class MplCanvas(FigureCanvasQTAgg):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(1,1,1)
         # self.axes.set_animated(True)
-        self.axes.set_ylim(2,-2)
+        # self.axes.set_animated(True)
         super(MplCanvas, self).__init__(fig)
 
 class RightBar(QWidget):
@@ -137,7 +140,9 @@ class MainWindow(QMainWindow):
         # RightBar is a class to show information like median or average also later can be used for sending data
         self.menu_bar = RightBar(self)
 
-        self.plot = MplCanvas(self, 5, 4, 100)
+        
+        self.plot = pg.PlotWidget()
+        self.pen = pg.mkPen(color= (255,0,0))
 
         # Worker
         self.worker = Worker(self)
@@ -150,16 +155,17 @@ class MainWindow(QMainWindow):
 
         self.ydata = [0 for i in range(self.n_data)]
        
-       
+        
 
         self.worker.RecvMessage.connect(self.set_addData)
        
         self.talking.connect(self.worker.Talking)
         self.worker.moveToThread(self.worker_thread)
 
-        self.update_plot()
+        self.data_line =  self.plot.plot(self.xdata, self.ydata, pen=self.pen)
+        
         self.timer = QTimer()
-        self.timer.setInterval(200)
+        self.timer.setInterval(1)
         self.timer.timeout.connect(self.update_plot)
         self.timer.start()
        
@@ -208,30 +214,26 @@ class MainWindow(QMainWindow):
 
     def update_plot(self):
        
-       
         tok = time.time()
        
-        self.xdata = list(range(self.n_data))
-
         if debug == 1:
             print(type(self.addData))
        
-       
-       
-        self.plot.axes.cla()
-
-        self.plot.axes.plot(self.xdata, self.ydata, "g")
+        
+        self.data_line.setData(self.xdata, self.ydata)
+        
         if debug == 1:
             print(self.ydata)
-       
-        if self.menu_bar.get_button_status() == True:
-            self.plot.draw()
+        
+        
         else:
             if debug == 1:
                 print("Refresh is off")
+
         tik = time.time()
-        if (tik-tok) > 0.4:
+        if (tik-tok) > 0.01:
             print(f"Failure to be fast enough: {tik-tok}")
+        print(f"your time is {tik-tok}")
        
     def get_ydata(self):
         return self.ydata
@@ -249,6 +251,8 @@ class MainWindow(QMainWindow):
 
     def set_ndata(self, value = 160):
         self.n_data = value
+        self.xdata = list(range(self.n_data))
+
        
 def Average(data):
     value = 0
