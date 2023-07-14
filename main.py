@@ -9,7 +9,6 @@ import numpy as np
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
 import pyqtgraph.exporters
-import pyqtgraph
 
 debug = 0
 
@@ -38,8 +37,9 @@ class Worker(QObject):
 
 class RightBar(QWidget):
 
-    def __init__(self, usecase):
+    def __init__(self, usecase, figure):
         super().__init__()
+        self.figure = figure
         self.usecase = usecase
         self.button = QPushButton("Refresh")
         self.plot_reset_button = QPushButton("Plot Reset")
@@ -52,6 +52,20 @@ class RightBar(QWidget):
         self.drop_down_add_curssor.addItem("Add Horizontal Curssor")
         
         self.drop_down_add_curssor.currentIndexChanged.connect(self._dropIndexChaged)
+        self.CursorPen = pg.mkPen(color = (255,0,0),width = 2, style=Qt.DashLine)
+        self.lineA = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True, label= "A-curssor")
+        
+        
+        self.lineB = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True, label= "B-curssor")
+        self.lineC = pg.InfiniteLine(angle = 0,pos = (0,0), pen = self.CursorPen, movable = True, label= "C-curssor")
+        self.lineD = pg.InfiniteLine(angle = 0,pos = (0,0), pen = self.CursorPen, movable = True, label= "D-curssor")
+        self.list_of_Hor_curssors = list()
+        self.list_of_Ver_curssors = list()
+        self.list_of_Hor_curssors.append(self.lineA)
+        self.list_of_Hor_curssors.append(self.lineB)
+        self.list_of_Ver_curssors.append(self.lineC)
+        self.list_of_Ver_curssors.append(self.lineD)
+        
                                                                    
         self._buttonoption()
         self.status = self.button.isChecked()
@@ -77,6 +91,10 @@ class RightBar(QWidget):
         self._layoutoption()
         self.counter_vertical_cursor = 0
         self.counter_horizontal_cursor = 0
+        
+        
+        
+
     def _remove_buttin_action(self):
         if self.drop_down_add_curssor.currentIndex() == 0:
             print("please choose correct curssor")
@@ -86,28 +104,25 @@ class RightBar(QWidget):
             
             if self.counter_vertical_cursor <= 2 and self.counter_vertical_cursor != 0:
                 self.counter_vertical_cursor -= 1
+                self.figure.removeItem(self.list_of_Hor_curssors[self.counter_vertical_cursor-1])
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
+                
             elif self.drop_down_add_curssor.currentIndex() == 0:
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
-            # else:
-            #     self.counter_vertical_cursor -= 1
-            #     self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
-            #                                         f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
+
         elif self.drop_down_add_curssor.currentIndex() == 2:
             
             if self.counter_horizontal_cursor <= 2 and self.counter_horizontal_cursor != 0:
                 self.counter_horizontal_cursor -= 1
+                self.figure.removeItem(self.list_of_Ver_curssors[self.counter_horizontal_cursor-1])
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
             elif self.drop_down_add_curssor.currentIndex() == 0:
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
-            # else:
-            #     self.counter_horizontal_cursor -= 1
-            #     self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
-            #                                         f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
+
     def _Add_button_action(self):
         if self.drop_down_add_curssor.currentIndex() == 0:
             print("please choose correct curssor")
@@ -119,6 +134,12 @@ class RightBar(QWidget):
                 self.counter_vertical_cursor += 1
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
+                # if self.counter_vertical_cursor == 1:
+                #     self.figure.addItem(self.list_of_Hor_curssors[0])
+                # elif self.counter_vertical_cursor == 2:
+                #     self.figure.addItem(self.list_of_Hor_curssors[1])
+                self.figure.addItem(self.list_of_Hor_curssors[self.counter_vertical_cursor-1])
+                
             else:
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Limit achived!")
@@ -128,6 +149,7 @@ class RightBar(QWidget):
                 self.counter_horizontal_cursor += 1
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
+                self.figure.addItem(self.list_of_Ver_curssors[self.counter_horizontal_cursor-1])
             else:
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Limit achived!")
@@ -203,9 +225,10 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self._view()
-
+        # its have to be here to give it abbility to have cusors and triggers
+        self.plot = pg.PlotWidget()
         # RightBar is a class to show information like median or average also later can be used for sending data
-        self.menu_bar = RightBar(self)
+        self.menu_bar = RightBar(self, self.plot)
         # test of reset button
         
         self._plotSetUp()
@@ -255,16 +278,17 @@ class MainWindow(QMainWindow):
         self.talking.emit(1)   
 
     def _plotSetUp(self):
-        self.plot = pg.PlotWidget()
-        self.pen = pg.mkPen(color= (200,125,60), width = 3)
-        self.CursorPen = pg.mkPen(color = (255,0,0),width = 2, style=Qt.DashLine)
+        # self.plot = pg.PlotWidget()
+        self.pen = pg.mkPen(color= (0,255,0), width = 3)
+        # self.CursorPen = pg.mkPen(color = (255,0,0),width = 2, style=Qt.DashLine)
         self.plot.setBackground('w')
         self.set_ndata()
         self.ydata = [0 for i in range(self.n_data)]
-        self.line = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True)
+        # self.line = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True)
+        # self.plot.addItem(self.line)
         self.Cursor_pos = int()
         self.Cross_point = int()
-        self.plot.addItem(self.line)
+        
         self.data_line =  pg.PlotCurveItem(self.xdata, self.ydata, pen=self.pen)
         self.plot.addItem(self.data_line)    
         self.plot.setXRange(0,160)
@@ -315,9 +339,9 @@ class MainWindow(QMainWindow):
         
         if self.menu_bar.get_button_status() == True:
             self.data_line.setData(self.xdata, self.ydata)
-        # Cursor working good but i have to add some options 
-        self.Cursor_pos = int(self.line.getPos()[0])
-        self.Cross_point = self.data_line.getData()[1][self.Cursor_pos]
+        # Cursor working good but i have to add some options but i will have to give i Right_bar
+        # self.Cursor_pos = int(self.line.getPos()[0])
+        # self.Cross_point = self.data_line.getData()[1][self.Cursor_pos]
         # print(f"line x posttion  = {self.Cursor_pos}")
         # print(f"line x Value  = {self.Cross_point}")
         if debug == 1:
