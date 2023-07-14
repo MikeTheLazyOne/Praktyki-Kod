@@ -1,7 +1,7 @@
 import os, sys, random, can
 from PyQt5.QtCore import QThread, Qt, QTimer, QObject, pyqtSignal as Signal, pyqtSlot as Slot
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QMenu, QMenuBar,\
-    QLabel, QLineEdit, QFormLayout
+    QLabel, QLineEdit, QFormLayout, QComboBox, QListWidget
 import time
 import sys
 import numpy as np
@@ -44,6 +44,15 @@ class RightBar(QWidget):
         self.button = QPushButton("Refresh")
         self.plot_reset_button = QPushButton("Plot Reset")
         self.cursor_line = QPushButton("Add Cursor")
+        self.remove_cursor = QPushButton("Remove Curssor")
+        
+        self.drop_down_add_curssor = QComboBox()
+        self.drop_down_add_curssor.addItem("---Choose curssor to add---")
+        self.drop_down_add_curssor.addItem("Add Vertical Curssor")
+        self.drop_down_add_curssor.addItem("Add Horizontal Curssor")
+        
+        self.drop_down_add_curssor.currentIndexChanged.connect(self._dropIndexChaged)
+                                                                   
         self._buttonoption()
         self.status = self.button.isChecked()
 
@@ -66,8 +75,66 @@ class RightBar(QWidget):
         self.timer.start()
 
         self._layoutoption()
+        self.counter_vertical_cursor = 0
+        self.counter_horizontal_cursor = 0
+    def _remove_buttin_action(self):
+        if self.drop_down_add_curssor.currentIndex() == 0:
+            print("please choose correct curssor")
+            self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                                                   f"please choose correct curssor")
+        elif self.drop_down_add_curssor.currentIndex() == 1:
+            
+            if self.counter_vertical_cursor <= 2 and self.counter_vertical_cursor != 0:
+                self.counter_vertical_cursor -= 1
+                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                                                    f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
+            elif self.drop_down_add_curssor.currentIndex() == 0:
+                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                                                    f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
+            # else:
+            #     self.counter_vertical_cursor -= 1
+            #     self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+            #                                         f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
+        elif self.drop_down_add_curssor.currentIndex() == 2:
+            
+            if self.counter_horizontal_cursor <= 2 and self.counter_horizontal_cursor != 0:
+                self.counter_horizontal_cursor -= 1
+                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                                                    f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
+            elif self.drop_down_add_curssor.currentIndex() == 0:
+                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                                                    f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
+            # else:
+            #     self.counter_horizontal_cursor -= 1
+            #     self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+            #                                         f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
+    def _Add_button_action(self):
+        if self.drop_down_add_curssor.currentIndex() == 0:
+            print("please choose correct curssor")
+            self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                                                   f"please choose correct curssor")
+        elif self.drop_down_add_curssor.currentIndex() == 1:
+            
+            if self.counter_vertical_cursor != 2:
+                self.counter_vertical_cursor += 1
+                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                                                    f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
+            else:
+                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                                                    f"Limit achived!")
+        elif self.drop_down_add_curssor.currentIndex() == 2:
+            
+            if self.counter_horizontal_cursor != 2:
+                self.counter_horizontal_cursor += 1
+                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                                                    f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
+            else:
+                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                                                    f"Limit achived!")
 
-       
+            
+    def _dropIndexChaged(self, index):
+        print("Activated index:", index)
 
     def _labeloption(self):
        
@@ -93,11 +160,13 @@ class RightBar(QWidget):
     def _buttonoption(self):
         self.button.clicked.connect(lambda: self._buttonwork())
         self.plot_reset_button.clicked.connect(lambda: self.usecase.plot.getPlotItem().enableAutoRange())
-        self.cursor_line.clicked.connect(lambda : self.usecase.plot.removeItem(self.usecase.line))
+        # lambda : self.usecase.plot.removeItem(self.usecase.line)
+        self.cursor_line.clicked.connect(self._Add_button_action)
+        self.remove_cursor.clicked.connect(self._remove_buttin_action)
         self.button.setCheckable(True)
         self.button.setChecked(True)
-        self.button.setFixedSize(300, 30)
-        self.plot_reset_button.setFixedSize(300, 30)
+        self.button.setMinimumSize(300, 30)
+        self.plot_reset_button.setMinimumSize(300, 30)
         #self.button.setAligment(Qt.AlignRight)
 
     def _layoutoption(self):
@@ -110,10 +179,12 @@ class RightBar(QWidget):
         self.layout.addRow(self.median, self.median_input)
         self.layout.addRow(self.max, self.max_input)
         self.layout.addRow(self.min, self.min_input)
+        self.layout.addRow(self.drop_down_add_curssor)
         self.layout.addRow(self.cursor_line)
-        self.setFixedSize(300, 600)
+        self.layout.addRow(self.remove_cursor)
+        self.setFixedSize(350, 600)
         self.setLayout(self.layout)
-       
+    
     def update_labels(self):
        
         if self.get_button_status() == True:
@@ -191,9 +262,11 @@ class MainWindow(QMainWindow):
         self.set_ndata()
         self.ydata = [0 for i in range(self.n_data)]
         self.line = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True)
-        
+        self.Cursor_pos = int()
+        self.Cross_point = int()
         self.plot.addItem(self.line)
-        self.data_line =  self.plot.plot(self.xdata, self.ydata, pen=self.pen)    
+        self.data_line =  pg.PlotCurveItem(self.xdata, self.ydata, pen=self.pen)
+        self.plot.addItem(self.data_line)    
         self.plot.setXRange(0,160)
 
     def _timerSetUp(self):
@@ -239,11 +312,14 @@ class MainWindow(QMainWindow):
        
         if debug == 1:
             print(type(self.addData))
-       
+        
         if self.menu_bar.get_button_status() == True:
             self.data_line.setData(self.xdata, self.ydata)
-        print(f"line x posttion  = {int(self.line.getPos()[0])}")
-        print(f"line x posttion  = {self.ydata[int(self.line.getPos()[0])]}")
+        # Cursor working good but i have to add some options 
+        self.Cursor_pos = int(self.line.getPos()[0])
+        self.Cross_point = self.data_line.getData()[1][self.Cursor_pos]
+        # print(f"line x posttion  = {self.Cursor_pos}")
+        # print(f"line x Value  = {self.Cross_point}")
         if debug == 1:
             print(self.ydata)
         
