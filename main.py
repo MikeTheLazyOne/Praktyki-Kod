@@ -37,10 +37,12 @@ class Worker(QObject):
 
 class RightBar(QWidget):
 
-    def __init__(self, usecase, figure):
+    def __init__(self, usecase, figure, data_line):
         super().__init__()
         self.figure = figure
         self.usecase = usecase
+        self.data_line = data_line
+        
         self.button = QPushButton("Refresh")
         self.plot_reset_button = QPushButton("Plot Reset")
         self.cursor_line = QPushButton("Add Cursor")
@@ -52,7 +54,7 @@ class RightBar(QWidget):
         self.drop_down_add_curssor.addItem("Add Horizontal Curssor")
         
         self.drop_down_add_curssor.currentIndexChanged.connect(self._dropIndexChaged)
-        self.CursorPen = pg.mkPen(color = (255,0,0),width = 2, style=Qt.DashLine)
+        self.CursorPen = pg.mkPen(color = (255,0,255),width = 2, style=Qt.DashLine)
         self.lineA = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True, label= "A-curssor")
         
         
@@ -153,8 +155,7 @@ class RightBar(QWidget):
             else:
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Limit achived!")
-
-            
+       
     def _dropIndexChaged(self, index):
         print("Activated index:", index)
 
@@ -169,8 +170,6 @@ class RightBar(QWidget):
         self.median.setMinimumSize(150, 30)
         self.max.setMinimumSize(150, 30)
         self.min.setMinimumSize(150, 30)
-
-       
 
     def _buttonwork(self):
         self.status = self.button.isChecked()
@@ -227,8 +226,10 @@ class MainWindow(QMainWindow):
         self._view()
         # its have to be here to give it abbility to have cusors and triggers
         self.plot = pg.PlotWidget()
+        self.pen = pg.mkPen(color= (0,255,0), width = 3)
+        self.data_line =  pg.PlotCurveItem(self.xdata, self.ydata, pen=self.pen)
         # RightBar is a class to show information like median or average also later can be used for sending data
-        self.menu_bar = RightBar(self, self.plot)
+        self.menu_bar = RightBar(self, self.plot, self.data_line)
         # test of reset button
         
         self._plotSetUp()
@@ -279,7 +280,8 @@ class MainWindow(QMainWindow):
 
     def _plotSetUp(self):
         # self.plot = pg.PlotWidget()
-        self.pen = pg.mkPen(color= (0,255,0), width = 3)
+        # self.pen = pg.mkPen(color= (0,255,0), width = 3)
+        # self.data_line =  pg.PlotCurveItem(self.xdata, self.ydata, pen=self.pen)
         # self.CursorPen = pg.mkPen(color = (255,0,0),width = 2, style=Qt.DashLine)
         self.plot.setBackground('w')
         self.set_ndata()
@@ -289,7 +291,7 @@ class MainWindow(QMainWindow):
         self.Cursor_pos = int()
         self.Cross_point = int()
         
-        self.data_line =  pg.PlotCurveItem(self.xdata, self.ydata, pen=self.pen)
+        
         self.plot.addItem(self.data_line)    
         self.plot.setXRange(0,160)
 
