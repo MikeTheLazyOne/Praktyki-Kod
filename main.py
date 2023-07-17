@@ -1,7 +1,7 @@
 import os, sys, random, can
 from PyQt5.QtCore import QThread, Qt, QTimer, QObject, pyqtSignal as Signal, pyqtSlot as Slot
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QMenu, QMenuBar,\
-    QLabel, QLineEdit, QFormLayout, QComboBox, QListWidget
+    QLabel, QLineEdit, QFormLayout, QComboBox, QListWidget, QGridLayout
 import time
 import sys
 import numpy as np
@@ -57,7 +57,6 @@ class RightBar(QWidget):
         self.CursorPen = pg.mkPen(color = (255,0,255),width = 2, style=Qt.DashLine)
         self.lineA = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True, label= "A-curssor")
         
-        
         self.lineB = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True, label= "B-curssor")
         self.lineC = pg.InfiniteLine(angle = 0,pos = (0,0), pen = self.CursorPen, movable = True, label= "C-curssor")
         self.lineD = pg.InfiniteLine(angle = 0,pos = (0,0), pen = self.CursorPen, movable = True, label= "D-curssor")
@@ -67,8 +66,7 @@ class RightBar(QWidget):
         self.list_of_Hor_curssors.append(self.lineB)
         self.list_of_Ver_curssors.append(self.lineC)
         self.list_of_Ver_curssors.append(self.lineD)
-        
-                                                                   
+                                                                  
         self._buttonoption()
         self.status = self.button.isChecked()
 
@@ -76,15 +74,26 @@ class RightBar(QWidget):
         self.median = QLabel("median")
         self.max = QLabel("Max")
         self.min = QLabel("Min")
+        self.AxPos = QLabel("A x pos:")
+        self.BxPos = QLabel("B x pos:")
+        self.AyPos = QLabel("A y pos:")
+        self.ByPos = QLabel("B y pos:")
+        self.MaxAB = QLabel("Max AB value:")
+        self.MinAB = QLabel("Min AB value:")
 
         self.average_input = QLineEdit()
         self.median_input = QLineEdit()
         self.min_input = QLineEdit()
         self.max_input = QLineEdit()
+        self.AxPos_input = QLineEdit()
+        self.BxPos_input = QLineEdit()
+        self.AyPos_input = QLineEdit()
+        self.ByPos_input = QLineEdit()
+        self.MaxAB_input = QLineEdit()
+        self.MinAB_input = QLineEdit()
 
         self._labeloption()
        
-
         self.timer = QTimer()
         self.timer.setInterval(400)
         self.timer.timeout.connect(self.update_labels)
@@ -93,10 +102,37 @@ class RightBar(QWidget):
         self._layoutoption()
         self.counter_vertical_cursor = 0
         self.counter_horizontal_cursor = 0
+    def __action_to_remove_currsor(self,cur_type):
+        if cur_type == 'vertical':
+            self.counter_vertical_cursor -= 1
+            self.figure.removeItem(self.list_of_Hor_curssors[self.counter_vertical_cursor-1])
+            self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                                                    f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
+        elif cur_type == 'horizontal':
+            self.counter_horizontal_cursor -= 1
+            self.figure.removeItem(self.list_of_Ver_curssors[self.counter_horizontal_cursor-1])
+            self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                                                    f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
+        else:
+            print(f"Pease specify type{cur_type}")
         
-        
-        
-
+    def __action_to_add_currsor(self,cur_type):
+        if cur_type == 'vertical':
+            self.counter_vertical_cursor += 1
+            self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                                                        f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
+            # if self.counter_vertical_cursor == 1:
+            #     self.figure.addItem(self.list_of_Hor_curssors[0])
+            # elif self.counter_vertical_cursor == 2:
+            #     self.figure.addItem(self.list_of_Hor_curssors[1])
+            self.figure.addItem(self.list_of_Hor_curssors[self.counter_vertical_cursor-1])
+        elif cur_type == 'horizontal':
+            self.counter_horizontal_cursor += 1
+            self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                                                    f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
+            self.figure.addItem(self.list_of_Ver_curssors[self.counter_horizontal_cursor-1])
+        else:
+            print("fplease specify type:{cur_type}")
     def _remove_buttin_action(self):
         if self.drop_down_add_curssor.currentIndex() == 0:
             print("please choose correct curssor")
@@ -105,11 +141,7 @@ class RightBar(QWidget):
         elif self.drop_down_add_curssor.currentIndex() == 1:
             
             if self.counter_vertical_cursor <= 2 and self.counter_vertical_cursor != 0:
-                self.counter_vertical_cursor -= 1
-                self.figure.removeItem(self.list_of_Hor_curssors[self.counter_vertical_cursor-1])
-                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
-                                                    f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
-                
+               self.__action_to_remove_currsor('vertical')
             elif self.drop_down_add_curssor.currentIndex() == 0:
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
@@ -117,10 +149,7 @@ class RightBar(QWidget):
         elif self.drop_down_add_curssor.currentIndex() == 2:
             
             if self.counter_horizontal_cursor <= 2 and self.counter_horizontal_cursor != 0:
-                self.counter_horizontal_cursor -= 1
-                self.figure.removeItem(self.list_of_Ver_curssors[self.counter_horizontal_cursor-1])
-                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
-                                                    f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
+                self.__action_to_remove_currsor('horizontal')
             elif self.drop_down_add_curssor.currentIndex() == 0:
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
@@ -133,25 +162,31 @@ class RightBar(QWidget):
         elif self.drop_down_add_curssor.currentIndex() == 1:
             
             if self.counter_vertical_cursor != 2:
-                self.counter_vertical_cursor += 1
-                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
-                                                    f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
-                # if self.counter_vertical_cursor == 1:
-                #     self.figure.addItem(self.list_of_Hor_curssors[0])
-                # elif self.counter_vertical_cursor == 2:
-                #     self.figure.addItem(self.list_of_Hor_curssors[1])
-                self.figure.addItem(self.list_of_Hor_curssors[self.counter_vertical_cursor-1])
-                
+                self.__action_to_add_currsor('vertical')
+                self.DataCursor = QFormLayout()
+                self.DataCursor.addRow(self.AxPos, self.AxPos_input)
+                self.DataCursor.addRow(self.AyPos, self.AyPos_input)
+                if self.counter_vertical_cursor == 2:
+                    self.DataCursor.addRow(self.BxPos, self.BxPos_input)
+                    self.DataCursor.addRow(self.ByPos, self.ByPos_input)
+                    self.DataCursor.addRow(self.MaxAB, self.MaxAB_input)
+                    self.DataCursor.addRow(self.MinAB, self.MinAB_input)
+                self.DataCursorWidget = QWidget()
+                self.DataCursorWidget.setLayout(self.DataCursor)
+                self.CursorLayout.addWidget(self.DataCursorWidget, 0, self.counter_vertical_cursor-1)
             else:
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Limit achived!")
         elif self.drop_down_add_curssor.currentIndex() == 2:
             
             if self.counter_horizontal_cursor != 2:
-                self.counter_horizontal_cursor += 1
-                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
-                                                    f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
-                self.figure.addItem(self.list_of_Ver_curssors[self.counter_horizontal_cursor-1])
+                self.__action_to_add_currsor('horizontal')
+                self.DataCursor = QFormLayout()
+                self.testy = QLabel("test")
+                self.DataCursor.addRow(self.testy)
+                self.DataCursorWidget = QWidget()
+                self.DataCursorWidget.setLayout(self.DataCursor)
+                self.CursorLayout.addWidget(self.DataCursor, 1, self.counter_horizontal_cursor-1)
             else:
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Limit achived!")
@@ -203,9 +238,12 @@ class RightBar(QWidget):
         self.layout.addRow(self.drop_down_add_curssor)
         self.layout.addRow(self.cursor_line)
         self.layout.addRow(self.remove_cursor)
-        self.setFixedSize(350, 600)
+        self.setMinimumSize(350, 600)
         self.setLayout(self.layout)
-    
+        self.CursorWidget = QWidget()
+        self.CursorLayout = QGridLayout()
+        self.CursorWidget.setLayout(self.CursorLayout)
+        self.layout.addRow(self.CursorWidget)
     def update_labels(self):
        
         if self.get_button_status() == True:
@@ -213,6 +251,7 @@ class RightBar(QWidget):
             self.median_input.setText(f"{round(np.median(self.usecase.get_ydata()), 2)}")
             self.max_input.setText(f"{round(np.max(self.usecase.get_ydata()), 2)}")
             self.min_input.setText(f"{round(np.min(self.usecase.get_ydata()), 2)}")
+            self.AxPos_input.setText(f"{round(np.min(self.usecase.get_ydata()), 2)}")
            
         else:
             if debug == 1:
@@ -222,7 +261,9 @@ class MainWindow(QMainWindow):
     talking = Signal(int)
     def __init__(self):
         super().__init__()
-
+        
+        self.set_ndata()
+        self.ydata = [0 for i in range(self.n_data)]
         self._view()
         # its have to be here to give it abbility to have cusors and triggers
         self.plot = pg.PlotWidget()
@@ -284,8 +325,8 @@ class MainWindow(QMainWindow):
         # self.data_line =  pg.PlotCurveItem(self.xdata, self.ydata, pen=self.pen)
         # self.CursorPen = pg.mkPen(color = (255,0,0),width = 2, style=Qt.DashLine)
         self.plot.setBackground('w')
-        self.set_ndata()
-        self.ydata = [0 for i in range(self.n_data)]
+        
+        
         # self.line = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True)
         # self.plot.addItem(self.line)
         self.Cursor_pos = int()
