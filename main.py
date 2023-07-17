@@ -56,7 +56,6 @@ class RightBar(QWidget):
         self.drop_down_add_curssor.currentIndexChanged.connect(self._dropIndexChaged)
         self.CursorPen = pg.mkPen(color = (255,0,255),width = 2, style=Qt.DashLine)
         self.lineA = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True, label= "A-curssor")
-        
         self.lineB = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True, label= "B-curssor")
         self.lineC = pg.InfiniteLine(angle = 0,pos = (0,0), pen = self.CursorPen, movable = True, label= "C-curssor")
         self.lineD = pg.InfiniteLine(angle = 0,pos = (0,0), pen = self.CursorPen, movable = True, label= "D-curssor")
@@ -102,21 +101,29 @@ class RightBar(QWidget):
         self._layoutoption()
         self.counter_vertical_cursor = 0
         self.counter_horizontal_cursor = 0
-    def __action_to_remove_currsor(self,cur_type):
+
+        self.DataCursor = QFormLayout()
+        self.DataCursorWidget = QWidget()
+        self.title = QLabel("Currsor Data")
+        self.DataCursor.addRow(self.title)
+        self.DataCursorWidget.setLayout(self.DataCursor)
+        self.CursorLayout.addWidget(self.DataCursorWidget, 0, self.counter_vertical_cursor-1)
+
+    def __action_to_remove_currsor(self, cur_type):
         if cur_type == 'vertical':
             self.counter_vertical_cursor -= 1
-            self.figure.removeItem(self.list_of_Hor_curssors[self.counter_vertical_cursor-1])
+            self.figure.removeItem(self.list_of_Hor_curssors[self.counter_vertical_cursor])
             self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
         elif cur_type == 'horizontal':
             self.counter_horizontal_cursor -= 1
-            self.figure.removeItem(self.list_of_Ver_curssors[self.counter_horizontal_cursor-1])
+            self.figure.removeItem(self.list_of_Ver_curssors[self.counter_horizontal_cursor])
             self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
         else:
             print(f"Pease specify type{cur_type}")
         
-    def __action_to_add_currsor(self,cur_type):
+    def __action_to_add_currsor(self, cur_type):
         if cur_type == 'vertical':
             self.counter_vertical_cursor += 1
             self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
@@ -141,7 +148,16 @@ class RightBar(QWidget):
         elif self.drop_down_add_curssor.currentIndex() == 1:
             
             if self.counter_vertical_cursor <= 2 and self.counter_vertical_cursor != 0:
-               self.__action_to_remove_currsor('vertical')
+                self.__action_to_remove_currsor('vertical')
+                
+                if self.counter_vertical_cursor ==1:
+                    self.DataCursor.removeRow(self.BxPos)
+                    self.DataCursor.removeRow(self.ByPos)
+                    self.DataCursor.removeRow(self.MaxAB)
+                    self.DataCursor.removeRow(self.MinAB)
+                elif self.counter_vertical_cursor == 0:
+                    self.DataCursor.removeRow(self.AyPos)
+                    self.DataCursor.removeRow(self.AxPos)
             elif self.drop_down_add_curssor.currentIndex() == 0:
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
@@ -154,16 +170,18 @@ class RightBar(QWidget):
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
 
-    def _Add_button_action(self):
+    def _add_button_action(self):
         if self.drop_down_add_curssor.currentIndex() == 0:
             print("please choose correct curssor")
+            self.drop_down_add_curssor.showPopup()
             self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                    f"please choose correct curssor")
+            
         elif self.drop_down_add_curssor.currentIndex() == 1:
             
             if self.counter_vertical_cursor != 2:
                 self.__action_to_add_currsor('vertical')
-                self.DataCursor = QFormLayout()
+                
                 self.DataCursor.addRow(self.AxPos, self.AxPos_input)
                 self.DataCursor.addRow(self.AyPos, self.AyPos_input)
                 if self.counter_vertical_cursor == 2:
@@ -171,9 +189,9 @@ class RightBar(QWidget):
                     self.DataCursor.addRow(self.ByPos, self.ByPos_input)
                     self.DataCursor.addRow(self.MaxAB, self.MaxAB_input)
                     self.DataCursor.addRow(self.MinAB, self.MinAB_input)
-                self.DataCursorWidget = QWidget()
                 self.DataCursorWidget.setLayout(self.DataCursor)
                 self.CursorLayout.addWidget(self.DataCursorWidget, 0, self.counter_vertical_cursor-1)
+                
             else:
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Limit achived!")
@@ -181,12 +199,11 @@ class RightBar(QWidget):
             
             if self.counter_horizontal_cursor != 2:
                 self.__action_to_add_currsor('horizontal')
-                self.DataCursor = QFormLayout()
-                self.testy = QLabel("test")
-                self.DataCursor.addRow(self.testy)
-                self.DataCursorWidget = QWidget()
-                self.DataCursorWidget.setLayout(self.DataCursor)
-                self.CursorLayout.addWidget(self.DataCursor, 1, self.counter_horizontal_cursor-1)
+                # self.DataCursor = QFormLayout()
+                
+                # self.DataCursorWidget = QWidget()
+                # self.DataCursorWidget.setLayout(self.DataCursor)
+                # self.CursorLayout.addWidget(self.DataCursor, 1, self.counter_horizontal_cursor-1)
             else:
                 self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
                                                     f"Limit achived!")
@@ -217,7 +234,7 @@ class RightBar(QWidget):
         self.button.clicked.connect(lambda: self._buttonwork())
         self.plot_reset_button.clicked.connect(lambda: self.usecase.plot.getPlotItem().enableAutoRange())
         # lambda : self.usecase.plot.removeItem(self.usecase.line)
-        self.cursor_line.clicked.connect(self._Add_button_action)
+        self.cursor_line.clicked.connect(self._add_button_action)
         self.remove_cursor.clicked.connect(self._remove_buttin_action)
         self.button.setCheckable(True)
         self.button.setChecked(True)
@@ -244,6 +261,7 @@ class RightBar(QWidget):
         self.CursorLayout = QGridLayout()
         self.CursorWidget.setLayout(self.CursorLayout)
         self.layout.addRow(self.CursorWidget)
+
     def update_labels(self):
        
         if self.get_button_status() == True:
@@ -251,12 +269,32 @@ class RightBar(QWidget):
             self.median_input.setText(f"{round(np.median(self.usecase.get_ydata()), 2)}")
             self.max_input.setText(f"{round(np.max(self.usecase.get_ydata()), 2)}")
             self.min_input.setText(f"{round(np.min(self.usecase.get_ydata()), 2)}")
-            self.AxPos_input.setText(f"{round(np.min(self.usecase.get_ydata()), 2)}")
            
         else:
             if debug == 1:
                 print("Refresh is off")
-    
+        if self.counter_vertical_cursor != 0:
+            AxPos = self.lineA.getXPos()
+            self.AxPos_input.setText(f"{int(AxPos)}")
+            self.AyPos_input.setText(f"{self.data_line.getData()[1][int(AxPos)]}")
+            if self.counter_vertical_cursor == 2:
+                BxPos = self.lineB.getXPos()
+                self.BxPos_input.setText(f"{int(self.lineB.getXPos())}")
+                self.ByPos_input.setText(f"{self.data_line.getData()[1][int(BxPos)]}")
+                if AxPos < BxPos:
+                    MaxAB = self.data_line.getData()[1][int(AxPos):int(BxPos)]
+                    self.MaxAB_input.setText(f"{np.max(MaxAB)}")
+                    self.MinAB_input.setText(f"{np.min(MaxAB)}")
+                elif BxPos < AxPos:
+                    MaxAB = self.data_line.getData()[1][int(BxPos):int(AxPos)]
+                    self.MaxAB_input.setText(f"{np.max(MaxAB)}")
+                    self.MinAB_input.setText(f"{np.min(MaxAB)}")
+                else:
+                    MaxAB = None
+                    self.MaxAB_input.setText(f"None")
+                    self.MinAB_input.setText(f"None")
+            
+
 class MainWindow(QMainWindow):
     talking = Signal(int)
     def __init__(self):
