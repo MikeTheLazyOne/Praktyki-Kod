@@ -73,8 +73,8 @@ class RightBar(QWidget):
         self._buttonoption()
         self.status = self.button.isChecked()
 
-        self.average = QLabel("average")
-        self.median = QLabel("median")
+        self.average = QLabel("Average")
+        self.median = QLabel("Median")
         self.max = QLabel("Max")
         self.min = QLabel("Min")
         self.AxPos = QLabel("A x pos:")
@@ -120,7 +120,7 @@ class RightBar(QWidget):
         self._labeloption()
        
         self.timer = QTimer()
-        self.timer.setInterval(400)
+        self.timer.setInterval(200)
         self.timer.timeout.connect(self.update_labels)
         self.timer.start()
 
@@ -169,6 +169,7 @@ class RightBar(QWidget):
             self.figure.addItem(self.list_of_Ver_cursors[self.counter_horizontal_cursor-1])
         else:
             print("fplease specify type:{cur_type}")
+
     def _remove_buttin_action(self):
         if self.drop_down_add_cursor.currentIndex() == 0:
             print("please choose correct cursor")
@@ -287,10 +288,12 @@ class RightBar(QWidget):
         self.button.setMinimumSize(300, 30)
         self.plot_reset_button.setMinimumSize(300, 30)
         #self.button.setAligment(Qt.AlignRight)
+
     def __add_triger(self):
         self.trigger_active = 1
         print("trigger added")
         self.figure.addItem(self.trigger)
+
     def _layoutoption(self):
 
         self.layout = QFormLayout()
