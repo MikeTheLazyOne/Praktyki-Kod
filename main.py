@@ -27,6 +27,7 @@ class Worker(QObject):
         tablica = np.sin(tablica)*2
         lista = list(round(elem,2) for elem in tablica)
         lista = podziel_liste(lista, 4)
+        len_of_list = len(lista)
         counter = 0
         while (v == 1):
             time.sleep(0.2)
@@ -43,28 +44,31 @@ class RightBar(QWidget):
         self.usecase = usecase
         self.data_line = data_line
         
-        self.button = QPushButton("Refresh")
-        self.plot_reset_button = QPushButton("Plot Reset")
-        self.cursor_line = QPushButton("Add Cursor")
-        self.remove_cursor = QPushButton("Remove Curssor")
+        self.button = QPushButton("Refressh")
+        self.plot_reset_button = QPushButton("Plot Resset")
+        self.cursor_line = QPushButton("Add Currssor")
+        self.remove_cursor = QPushButton("Remove Currssor")
+        self.trigger_button = QPushButton("AddTrigger")
         
-        self.drop_down_add_curssor = QComboBox()
-        self.drop_down_add_curssor.addItem("---Choose curssor to add---")
-        self.drop_down_add_curssor.addItem("Add Vertical Curssor")
-        self.drop_down_add_curssor.addItem("Add Horizontal Curssor")
+        self.drop_down_add_cursor = QComboBox()
+        self.drop_down_add_cursor.addItem("---Choose currssor to add---")
+        self.drop_down_add_cursor.addItem("Add Vertical Currssor")
+        self.drop_down_add_cursor.addItem("Add Horizontal Currssor")
         
-        self.drop_down_add_curssor.currentIndexChanged.connect(self._dropIndexChaged)
+        self.drop_down_add_cursor.currentIndexChanged.connect(self._dropIndexChaged)
         self.CursorPen = pg.mkPen(color = (255,0,255),width = 2, style=Qt.DashLine)
-        self.lineA = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True, label= "A-curssor")
-        self.lineB = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True, label= "B-curssor")
-        self.lineC = pg.InfiniteLine(angle = 0,pos = (0,0), pen = self.CursorPen, movable = True, label= "C-curssor")
-        self.lineD = pg.InfiniteLine(angle = 0,pos = (0,0), pen = self.CursorPen, movable = True, label= "D-curssor")
-        self.list_of_Hor_curssors = list()
-        self.list_of_Ver_curssors = list()
-        self.list_of_Hor_curssors.append(self.lineA)
-        self.list_of_Hor_curssors.append(self.lineB)
-        self.list_of_Ver_curssors.append(self.lineC)
-        self.list_of_Ver_curssors.append(self.lineD)
+        self.TriggerPen = pg.mkPen(color = (255,0,0),width = 2, style=Qt.DotLine)
+        self.lineA = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True, label= "A-cursor")
+        self.lineB = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True, label= "B-cursor")
+        self.lineC = pg.InfiniteLine(angle = 0, pos = (0,0), pen = self.CursorPen, movable = True, label= "C-cursor")
+        self.lineD = pg.InfiniteLine(angle = 0, pos = (0,0), pen = self.CursorPen, movable = True, label= "D-cursor")
+        self.trigger = pg.InfiniteLine(angle=0, pos = (0,0), pen = self.TriggerPen, movable = True, label="Trigger")
+        self.list_of_Hor_cursors = list()
+        self.list_of_Ver_cursors = list()
+        self.list_of_Hor_cursors.append(self.lineA)
+        self.list_of_Hor_cursors.append(self.lineB)
+        self.list_of_Ver_cursors.append(self.lineC)
+        self.list_of_Ver_cursors.append(self.lineD)
                                                                   
         self._buttonoption()
         self.status = self.button.isChecked()
@@ -79,6 +83,16 @@ class RightBar(QWidget):
         self.ByPos = QLabel("B y pos:")
         self.MaxAB = QLabel("Max AB value:")
         self.MinAB = QLabel("Min AB value:")
+        self.Trigger_val = QLabel("Triger Value:")
+
+        self.CyPos = QLabel("C y value:")
+        self.DyPos = QLabel("D y value:")
+        self.CxPos_one = QLabel("C x pos 1st:")
+        self.CxPos_two = QLabel("C x pos 2nd:")
+        self.DxPos_one = QLabel("D x pos 1st:")
+        self.DxPos_two = QLabel("D x pos 2nd:")
+        self.Len_CD = QLabel("Length C-D:")
+        self.Len_DC = QLabel("Length D-C:")
 
         self.average_input = QLineEdit()
         self.median_input = QLineEdit()
@@ -91,6 +105,18 @@ class RightBar(QWidget):
         self.MaxAB_input = QLineEdit()
         self.MinAB_input = QLineEdit()
 
+        self.CyPos_input = QLineEdit()
+        self.DyPos_input = QLineEdit()
+        self.CxPos_one_input = QLineEdit()
+        self.CxPos_two_input = QLineEdit()
+        self.DxPos_one_input = QLineEdit()
+        self.DxPos_two_input = QLineEdit()
+        self.Len_CD_input = QLineEdit()
+        self.Len_DC_input = QLineEdit()
+
+        self.Trigger_val_input = QLineEdit()
+        self.trigger_active = 0
+
         self._labeloption()
        
         self.timer = QTimer()
@@ -102,110 +128,129 @@ class RightBar(QWidget):
         self.counter_vertical_cursor = 0
         self.counter_horizontal_cursor = 0
 
-        self.DataCursor = QFormLayout()
-        self.DataCursorWidget = QWidget()
-        self.title = QLabel("Currsor Data")
-        self.DataCursor.addRow(self.title)
-        self.DataCursorWidget.setLayout(self.DataCursor)
-        self.CursorLayout.addWidget(self.DataCursorWidget, 0, self.counter_vertical_cursor-1)
+        self.DataCursorVerticalLayout = QFormLayout()
+        self.DataCursorVerticalLayout.setSpacing(10)
+        self.DataCursorVerticalWidget = QWidget()
+
+        self.DataCursorHorizontalLayout = QFormLayout()
+        self.DataCursorHorizontalWidget = QWidget()
+        # self.DataCursorWidget.setFixedHeight(1000)
+        self.DataCursorHorizontalWidget.setLayout(self.DataCursorHorizontalLayout)
+        self.DataCursorVerticalWidget.setLayout(self.DataCursorVerticalLayout)
+        self.CursorLayout.addWidget(self.DataCursorVerticalWidget, 0, 0)
+        self.CursorLayout.addWidget(self.DataCursorHorizontalWidget, 0, 1)
+
 
     def __action_to_remove_currsor(self, cur_type):
         if cur_type == 'vertical':
             self.counter_vertical_cursor -= 1
-            self.figure.removeItem(self.list_of_Hor_curssors[self.counter_vertical_cursor])
-            self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
-                                                    f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
+            self.figure.removeItem(self.list_of_Hor_cursors[self.counter_vertical_cursor])
+            self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
+                                                    f"Add Vertical cursor ({self.counter_vertical_cursor}/2)")
         elif cur_type == 'horizontal':
             self.counter_horizontal_cursor -= 1
-            self.figure.removeItem(self.list_of_Ver_curssors[self.counter_horizontal_cursor])
-            self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
-                                                    f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
+            self.figure.removeItem(self.list_of_Ver_cursors[self.counter_horizontal_cursor])
+            self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
+                                                    f"Add horizontal cursor ({self.counter_horizontal_cursor}/2)")
         else:
             print(f"Pease specify type{cur_type}")
         
     def __action_to_add_currsor(self, cur_type):
         if cur_type == 'vertical':
             self.counter_vertical_cursor += 1
-            self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
-                                                        f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
-            # if self.counter_vertical_cursor == 1:
-            #     self.figure.addItem(self.list_of_Hor_curssors[0])
-            # elif self.counter_vertical_cursor == 2:
-            #     self.figure.addItem(self.list_of_Hor_curssors[1])
-            self.figure.addItem(self.list_of_Hor_curssors[self.counter_vertical_cursor-1])
+            self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
+                                                        f"Add Vertical cursor ({self.counter_vertical_cursor}/2)")
+
+            self.figure.addItem(self.list_of_Hor_cursors[self.counter_vertical_cursor-1])
         elif cur_type == 'horizontal':
             self.counter_horizontal_cursor += 1
-            self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
-                                                    f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
-            self.figure.addItem(self.list_of_Ver_curssors[self.counter_horizontal_cursor-1])
+            self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
+                                                    f"Add horizontal cursor ({self.counter_horizontal_cursor}/2)")
+            self.figure.addItem(self.list_of_Ver_cursors[self.counter_horizontal_cursor-1])
         else:
             print("fplease specify type:{cur_type}")
     def _remove_buttin_action(self):
-        if self.drop_down_add_curssor.currentIndex() == 0:
-            print("please choose correct curssor")
-            self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
-                                                   f"please choose correct curssor")
-        elif self.drop_down_add_curssor.currentIndex() == 1:
+        if self.drop_down_add_cursor.currentIndex() == 0:
+            print("please choose correct cursor")
+            self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
+                                                   f"please choose correct cursor")
+        elif self.drop_down_add_cursor.currentIndex() == 1:
             
             if self.counter_vertical_cursor <= 2 and self.counter_vertical_cursor != 0:
                 self.__action_to_remove_currsor('vertical')
                 
                 if self.counter_vertical_cursor ==1:
-                    self.DataCursor.removeRow(self.BxPos)
-                    self.DataCursor.removeRow(self.ByPos)
-                    self.DataCursor.removeRow(self.MaxAB)
-                    self.DataCursor.removeRow(self.MinAB)
+                    self.DataCursorVerticalLayout.takeRow(self.BxPos)
+                    self.DataCursorVerticalLayout.takeRow(self.ByPos)
+                    self.DataCursorVerticalLayout.takeRow(self.MaxAB)
+                    self.DataCursorVerticalLayout.takeRow(self.MinAB)
                 elif self.counter_vertical_cursor == 0:
-                    self.DataCursor.removeRow(self.AyPos)
-                    self.DataCursor.removeRow(self.AxPos)
-            elif self.drop_down_add_curssor.currentIndex() == 0:
-                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
-                                                    f"Add Vertical curssor ({self.counter_vertical_cursor}/2)")
+                    self.DataCursorVerticalLayout.takeRow(self.AyPos)
+                    self.DataCursorVerticalLayout.takeRow(self.AxPos)
+            elif self.drop_down_add_cursor.currentIndex() == 0:
+                self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
+                                                    f"Add Vertical cursor ({self.counter_vertical_cursor}/2)")
 
-        elif self.drop_down_add_curssor.currentIndex() == 2:
+        elif self.drop_down_add_cursor.currentIndex() == 2:
             
             if self.counter_horizontal_cursor <= 2 and self.counter_horizontal_cursor != 0:
                 self.__action_to_remove_currsor('horizontal')
-            elif self.drop_down_add_curssor.currentIndex() == 0:
-                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
-                                                    f"Add horizontal curssor ({self.counter_horizontal_cursor}/2)")
+                if self.counter_horizontal_cursor ==1:
+                    self.DataCursorHorizontalLayout.takeRow(self.CyPos)
+                    self.DataCursorHorizontalLayout.takeRow(self.CxPos_one)
+                    self.DataCursorHorizontalLayout.takeRow(self.CxPos_two)
+                elif self.counter_horizontal_cursor == 0:
+                    self.DataCursorHorizontalLayout.takeRow(self.DyPos)
+                    self.DataCursorHorizontalLayout.takeRow(self.DxPos_one)
+                    self.DataCursorHorizontalLayout.takeRow(self.DxPos_two)
+                    self.DataCursorHorizontalLayout.takeRow(self.Len_CD)
+                    self.DataCursorHorizontalLayout.takeRow(self.Len_DC)
+            elif self.drop_down_add_cursor.currentIndex() == 0:
+                self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
+                                                    f"Add horizontal cursor ({self.counter_horizontal_cursor}/2)")
 
     def _add_button_action(self):
-        if self.drop_down_add_curssor.currentIndex() == 0:
-            print("please choose correct curssor")
-            self.drop_down_add_curssor.showPopup()
-            self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
-                                                   f"please choose correct curssor")
+        if self.drop_down_add_cursor.currentIndex() == 0:
+            print("please choose correct cursor")
+            self.drop_down_add_cursor.showPopup()
+            self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
+                                                   f"Please choose correct cursor")
             
-        elif self.drop_down_add_curssor.currentIndex() == 1:
+        elif self.drop_down_add_cursor.currentIndex() == 1:
             
             if self.counter_vertical_cursor != 2:
                 self.__action_to_add_currsor('vertical')
-                
-                self.DataCursor.addRow(self.AxPos, self.AxPos_input)
-                self.DataCursor.addRow(self.AyPos, self.AyPos_input)
+                if self.counter_vertical_cursor == 1:
+                    self.DataCursorVerticalLayout.addRow(self.AxPos, self.AxPos_input)
+                    self.DataCursorVerticalLayout.addRow(self.AyPos, self.AyPos_input)
                 if self.counter_vertical_cursor == 2:
-                    self.DataCursor.addRow(self.BxPos, self.BxPos_input)
-                    self.DataCursor.addRow(self.ByPos, self.ByPos_input)
-                    self.DataCursor.addRow(self.MaxAB, self.MaxAB_input)
-                    self.DataCursor.addRow(self.MinAB, self.MinAB_input)
-                self.DataCursorWidget.setLayout(self.DataCursor)
-                self.CursorLayout.addWidget(self.DataCursorWidget, 0, self.counter_vertical_cursor-1)
+                    self.DataCursorVerticalLayout.addRow(self.BxPos, self.BxPos_input)
+                    self.DataCursorVerticalLayout.addRow(self.ByPos, self.ByPos_input)
+                    self.DataCursorVerticalLayout.addRow(self.MaxAB, self.MaxAB_input)
+                    self.DataCursorVerticalLayout.addRow(self.MinAB, self.MinAB_input)
+                # self.DataCursorVerticalWidget.setLayout(self.DataCursorVerticalLayout)
+                # self.CursorLayout.addWidget(self.DataCursorVerticalWidget, 0, self.counter_vertical_cursor-1)
                 
             else:
-                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
                                                     f"Limit achived!")
-        elif self.drop_down_add_curssor.currentIndex() == 2:
+        elif self.drop_down_add_cursor.currentIndex() == 2:
             
             if self.counter_horizontal_cursor != 2:
                 self.__action_to_add_currsor('horizontal')
-                # self.DataCursor = QFormLayout()
-                
-                # self.DataCursorWidget = QWidget()
-                # self.DataCursorWidget.setLayout(self.DataCursor)
-                # self.CursorLayout.addWidget(self.DataCursor, 1, self.counter_horizontal_cursor-1)
+                if self.counter_horizontal_cursor == 1:
+                    self.DataCursorHorizontalLayout.addRow(self.CyPos, self.CyPos_input)
+                    self.DataCursorHorizontalLayout.addRow(self.CxPos_one, self.CxPos_one_input)
+                    self.DataCursorHorizontalLayout.addRow(self.CxPos_two, self.CxPos_two_input)
+                    
+                if self.counter_horizontal_cursor == 2:
+                    self.DataCursorHorizontalLayout.addRow(self.DyPos, self.DyPos_input)
+                    self.DataCursorHorizontalLayout.addRow(self.DxPos_one, self.DxPos_one_input)
+                    self.DataCursorHorizontalLayout.addRow(self.DxPos_two, self.DxPos_two_input)
+                    self.DataCursorHorizontalLayout.addRow(self.Len_CD, self.Len_CD_input)
+                    self.DataCursorHorizontalLayout.addRow(self.Len_DC, self.Len_DC_input)
             else:
-                self.drop_down_add_curssor.setItemText(self.drop_down_add_curssor.currentIndex(),\
+                self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
                                                     f"Limit achived!")
        
     def _dropIndexChaged(self, index):
@@ -236,12 +281,16 @@ class RightBar(QWidget):
         # lambda : self.usecase.plot.removeItem(self.usecase.line)
         self.cursor_line.clicked.connect(self._add_button_action)
         self.remove_cursor.clicked.connect(self._remove_buttin_action)
+        self.trigger_button.clicked.connect(self.__add_triger)
         self.button.setCheckable(True)
         self.button.setChecked(True)
         self.button.setMinimumSize(300, 30)
         self.plot_reset_button.setMinimumSize(300, 30)
         #self.button.setAligment(Qt.AlignRight)
-
+    def __add_triger(self):
+        self.trigger_active = 1
+        print("trigger added")
+        self.figure.addItem(self.trigger)
     def _layoutoption(self):
 
         self.layout = QFormLayout()
@@ -252,17 +301,31 @@ class RightBar(QWidget):
         self.layout.addRow(self.median, self.median_input)
         self.layout.addRow(self.max, self.max_input)
         self.layout.addRow(self.min, self.min_input)
-        self.layout.addRow(self.drop_down_add_curssor)
+        self.layout.addRow(self.drop_down_add_cursor)
         self.layout.addRow(self.cursor_line)
         self.layout.addRow(self.remove_cursor)
-        self.setMinimumSize(350, 600)
+        # self.setMinimumSize(350, 600)
+        self.setFixedWidth(400)
         self.setLayout(self.layout)
         self.CursorWidget = QWidget()
         self.CursorLayout = QGridLayout()
+        # self.CursorWidget.setFixedHeight(1000)
         self.CursorWidget.setLayout(self.CursorLayout)
         self.layout.addRow(self.CursorWidget)
+        self.layout.addRow(self.trigger_button)
+        self.layout.addRow(self.Trigger_val, self.Trigger_val_input)
 
     def update_labels(self):
+        if self.trigger_active == 1:
+            self.Trigger_val_input.setText(f"{round(self.trigger.getYPos(), 2)}")
+            value = self.data_line.getData()[1][-1]
+            value_prev = self.data_line.getData()[1][-6]
+            if value >= round(self.trigger.getYPos(), 2) and round(self.trigger.getYPos(), 2) >= value_prev:
+                self.status = self.button.setChecked(False)
+                print("jest góra")
+            if value <= round(self.trigger.getYPos(), 2) and round(self.trigger.getYPos(), 2) <= value_prev:
+                self.status = self.button.setChecked(False)
+                print("jest dół")
        
         if self.get_button_status() == True:
             self.average_input.setText(f"{round(np.average(self.usecase.get_ydata()), 2)}")
@@ -293,6 +356,12 @@ class RightBar(QWidget):
                     MaxAB = None
                     self.MaxAB_input.setText(f"None")
                     self.MinAB_input.setText(f"None")
+        if self.counter_horizontal_cursor != 0:
+            
+            CyPos = self.lineC.getYPos()
+            self.CyPos_input.setText(f"{round(CyPos, 2)}")
+            lista = self.data_line.getData()[1]
+            self.CxPos_one_input.setText(f"{closest_value(lista, CyPos)}")
             
 
 class MainWindow(QMainWindow):
@@ -552,6 +621,9 @@ def decoding(x, y):
 
 def podziel_liste(lista, rozmiar):
     return[lista[i:i+rozmiar] for i in range(0,len(lista), rozmiar)]
+
+def closest_value(lista, value):
+    return min (lista, key= lambda x: abs(x-value))
 
 
 if __name__ == '__main__':
