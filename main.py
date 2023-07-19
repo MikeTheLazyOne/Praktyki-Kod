@@ -13,7 +13,7 @@ import pyqtgraph.exporters
 debug = 0
 
 class Worker(QObject):
-    RecvMessage = Signal(list)
+    RecvMessage = Signal(dict)
    
 
     def __init__(self, szef):
@@ -31,7 +31,8 @@ class Worker(QObject):
         counter = 0
         while (v == 1):
             time.sleep(0.2)
-            self.RecvMessage.emit(lista[counter])
+            data = {123:lista[counter]}
+            self.RecvMessage.emit(data)
             counter += 1
             if counter == 40:
                 counter = 0               
@@ -358,25 +359,30 @@ class MainWindow(QMainWindow):
     talking = Signal(int)
     def __init__(self):
         super().__init__()
-        
-        self.set_ndata()
-        self.ydata = [0 for i in range(self.n_data)]
         self._view()
+
+        self.n_data = 160
+        self.xdata = list(range(self.n_data))
+        rows, cols = (2, 160)
+        self.ydata = [[0 for i in range(cols)] for j in range(rows)]
+
         # its have to be here to give it abbility to have cusors and triggers
         self.plot = pg.PlotWidget()
         self.pen = pg.mkPen(color= (0,255,0), width = 3)
-        self.data_line =  pg.PlotCurveItem(self.xdata, self.ydata, pen=self.pen)
+        self.data_line =  pg.PlotCurveItem(self.xdata, self.ydata[0], pen=self.pen)
         # RightBar is a class to show information like median or average also later can be used for sending data
         self.menu_bar = RightBar(self, self.plot, self.data_line)
-        # test of reset button
-        
+
         self._plotSetUp()
-        # self.test_btn = QPushButton("reset")
-        # self.test_btn.clicked.connect(lambda: self.plot.getPlotItem().enableAutoRange())
+ 
+        self.worker = Worker(self)  # Worker
+        self.worker_thread = QThread()  # Thread
         self._threadSetUp()
         
+        self.timer = QTimer()
         self._timerSetUp()
-                
+
+        self.main_window_layout = QHBoxLayout()        
         self._layoutoption()
 
         # Setting Widget for layout to show in center still don't know to make toolbar
@@ -386,7 +392,7 @@ class MainWindow(QMainWindow):
         # creating menu bar at top of the app
         self._menumake()
         self.id = 0
-        self.showMaximized()
+        # self.showMaximized()
     
     def notify(self, receiver, event):
         try:
@@ -407,10 +413,7 @@ class MainWindow(QMainWindow):
         self.id += 1
 
     def _threadSetUp(self):
-        # Worker
-        self.worker = Worker(self)
-        # Thread
-        self.worker_thread = QThread()
+        
         self.worker.RecvMessage.connect(self.set_addData)
         self.talking.connect(self.worker.Talking)
         self.worker.moveToThread(self.worker_thread)
@@ -420,12 +423,11 @@ class MainWindow(QMainWindow):
     def _plotSetUp(self):
         
         self.plot.setBackground('w')
-        
         self.plot.addItem(self.data_line)    
         self.plot.setXRange(0,160)
 
     def _timerSetUp(self):
-        self.timer = QTimer()
+        
         self.timer.setInterval(100)
         self.timer.timeout.connect(self.update_plot)
         self.timer.start()
@@ -435,9 +437,8 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(400, 500)
 
     def _layoutoption(self):
-        self.main_window_layout = QHBoxLayout()
-        # adding Widgets to layout
         
+        # adding Widgets to layout
         self.main_window_layout.addWidget(self.plot)
         self.main_window_layout.addWidget(self.menu_bar)
         self.main_window_layout.setAlignment(Qt.AlignCenter)
@@ -445,7 +446,6 @@ class MainWindow(QMainWindow):
     def _menumake(self):
         # Menu bar and options
         menubar = QMenuBar(self)
-
         # creating some toolbars for file and other things
         filemenu = QMenu("&File", self)
         filemenu.addAction("Save", lambda : self.savePlotToFile())
@@ -465,39 +465,42 @@ class MainWindow(QMainWindow):
        
         tok = time.time()
        
-        if debug == 1:
-            print(type(self.addData))
-        
         if self.menu_bar.get_button_status() == True:
-            self.data_line.setData(self.xdata, self.ydata)
-
-        if debug == 1:
-            print(self.ydata)
-        
-        else:
-            if debug == 1:
-                print("Refresh is off")
+            self.data_line.setData(self.xdata, self.ydata[0])
 
         tik = time.time()
+
         if (tik-tok) > 0.01:
             print(f"Failure to be fast enough: {tik-tok}")
-        
-       
-    def get_ydata(self):
-        return self.ydata
+    
     def set_addData(self, value = 0):
+        
         if type(value) == list:
             for data in value:
-                self.ydata.pop(0)
-                self.ydata.append(data)
+                self.ydata[0].pop(0)
+                self.ydata[0].append(data)
+        elif type(value) == dict:
+            for key, value in value.items():
+                if key == 123:
+                    for data in value:
+                        self.ydata[0].pop(0)
+                        self.ydata[0].append(data)
+                elif key == 321:
+                    for data in value:
+                        self.ydata[1].pop(0)
+                        self.ydata[1].append(data)
+                else:
+                    print("Lipa")
+                
         else:
             self.addData = list()
             self.addData.append(value)
-            self.ydata = self.ydata[1:] + self.addData
+            self.ydata[0] = self.ydata[0][1:] + self.addData
+    
+    def get_ydata(self):
+        return self.ydata[0]
 
-    def set_ndata(self, value = 160):
-        self.n_data = value
-        self.xdata = list(range(self.n_data))
+    
 
        
 def Average(data):
