@@ -5,7 +5,8 @@ from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVB
 import time
 import sys
 import numpy as np
-
+from PyQt5.QtCore import *
+from PyQt5.QtGui import * 
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
 import pyqtgraph.exporters
@@ -37,6 +38,100 @@ class Worker(QObject):
             if counter == 40:
                 counter = 0               
 
+class CheckableComboBox(QComboBox):
+  
+    # constructor
+    def __init__(self, parent = None):
+        super(CheckableComboBox, self).__init__(parent)
+        self.view().pressed.connect(self.handleItemPressed)
+        self.setModel(QStandardItemModel(self))
+  
+    count = 0
+    # action called when item get checked
+    
+  
+    # when any item get pressed
+    def handleItemPressed(self, index):
+  
+        # getting the item
+        self.item = self.model().itemFromIndex(index)
+  
+        # checking if item is checked
+        if self.item.checkState() == Qt.Checked:
+  
+            # making it unchecked
+            self.item.setCheckState(Qt.Unchecked)
+  
+        # if not checked
+        else:
+            # making the item checked
+            self.item.setCheckState(Qt.Checked)
+  
+            self.count += 1
+  
+           
+            self.do_action(self.currentIndex)
+    def do_action(self, index):
+        print(f"{self.currentIndex()} and status = {self.item.checkState()}")
+
+class AnotherWindow(QWidget):
+    """
+    This "window" is a QWidget. If it has no parent, it
+    will appear as a free-floating window as we want.
+    """
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout()
+        self.label = QLabel("Another Window")
+        self.widget_1 = QWidget()
+        self.widget_2 = QWidget()
+        self.widget_3 = QWidget()
+        self.widget_4 = QWidget()
+        self.widget_5 = QWidget()
+        self.plotlayout_1 = PlotOptions(1)
+        self.plotlayout_2 = PlotOptions(2)
+        self.plotlayout_3 = PlotOptions(3)
+        self.plotlayout_4 = PlotOptions(4)
+        self.plotlayout_5 = PlotOptions(5)
+        self.widget_1.setLayout(self.plotlayout_1)
+        self.widget_2.setLayout(self.plotlayout_2)
+        self.widget_3.setLayout(self.plotlayout_3)
+        self.widget_4.setLayout(self.plotlayout_4)
+        self.widget_5.setLayout(self.plotlayout_5)
+        layout.addWidget(self.label)
+        layout.addWidget(self.widget_1)
+        layout.addWidget(self.widget_2)
+        layout.addWidget(self.widget_3)
+        layout.addWidget(self.widget_4)
+        layout.addWidget(self.widget_5)
+        self.setLayout(layout)
+        self.frameSize = 10
+
+class PlotOptions(QVBoxLayout):
+
+    def __init__(self, index):
+        super().__init__()
+        self.index = index
+        self.NewLayout = QHBoxLayout()
+        self.plotname  = QLabel(f"Plot-{index} Name")
+        self.plotname_input = QLineEdit("-- Choose name --")
+        self.plotid = QLabel("Plot ID:")
+        self.plotid_input = QLineEdit("-- Choose ID --")
+        self.NewLayout.addWidget(self.plotname)
+        self.NewLayout.addWidget(self.plotname_input)
+        self.NewLayout.addWidget(self.plotid)
+        self.NewLayout.addWidget(self.plotid_input)
+        self.widget_one = QWidget()
+        self.widget_one.setLayout(self.NewLayout)
+        self.addWidget(self.widget_one)
+        self.plotname_input.editingFinished.connect(self.__name_changed)
+        self.plotid_input.editingFinished.connect(self.__id_changed)
+    def __name_changed(self):
+        #usecase -> mainWindow -> change plotname
+        print(f"text changed of plot-{self.index} to: {self.plotname_input.displayText()}")
+    def __id_changed(self):
+        print(f"id of plot-{self.index} to: {self.plotid_input.displayText()}")
+
 class RightBar(QWidget):
 
     def __init__(self, usecase, figure, data_line):
@@ -50,6 +145,14 @@ class RightBar(QWidget):
         self.cursor_line = QPushButton("Add Currssor")
         self.remove_cursor = QPushButton("Remove Currssor")
         self.trigger_button = QPushButton("AddTrigger")
+
+        # self.plot_choooser = CheckableComboBox()
+        # self.plot_choooser.addItem("plot-1")
+        # self.plot_choooser.addItem("plot-2")
+        # self.plot_choooser.addItem("plot-3")
+        # self.plot_choooser.addItem("plot-4")
+        # self.plot_choooser.addItem("plot-5")
+        # # self.plot_choooser.setEditable(True)
         
         self.drop_down_add_cursor = QComboBox()
         self.drop_down_add_cursor.addItem("---Choose currssor to add---")
@@ -304,7 +407,8 @@ class RightBar(QWidget):
         self.CursorLayout = QGridLayout()
         
         self.CursorWidget.setLayout(self.CursorLayout)
-        self.__addRowArgs(self.layout, self.CursorWidget, self.trigger_button, (self.Trigger_val, self.Trigger_val_input))
+        self.__addRowArgs(self.layout, self.CursorWidget, self.trigger_button,\
+                           (self.Trigger_val, self.Trigger_val_input))
 
     def update_labels(self):
         if self.trigger_active == 1:
@@ -393,6 +497,7 @@ class MainWindow(QMainWindow):
         self._menumake()
         self.id = 0
         # self.showMaximized()
+        self.newWindow = AnotherWindow()
     
     def notify(self, receiver, event):
         try:
@@ -455,7 +560,10 @@ class MainWindow(QMainWindow):
         helpmenu.addAction("Help", lambda: print("there is no help :D"))
         menubar.addMenu(filemenu)
         menubar.addMenu(helpmenu)
+        menubar.addAction("&Plot Configuration", lambda: self._show_new_window())
         self.setMenuBar(menubar)
+    def _show_new_window(self):
+        self.newWindow.show()
 
     def _buttonwork(self):
 
