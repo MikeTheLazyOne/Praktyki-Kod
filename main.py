@@ -116,6 +116,9 @@ class RightBar(QWidget):
 
         self.Trigger_val_input = QLineEdit()
         self.trigger_active = 0
+        self.trigger_start = QPushButton("Start Trigger")
+        self.trigger_stop = QPushButton("Stop Trigger")
+
 
         self._labeloption()
        
@@ -181,13 +184,9 @@ class RightBar(QWidget):
                 self.__action_to_remove_currsor('vertical')
                 
                 if self.counter_vertical_cursor ==1:
-                    self.DataCursorVerticalLayout.takeRow(self.BxPos)
-                    self.DataCursorVerticalLayout.takeRow(self.ByPos)
-                    self.DataCursorVerticalLayout.takeRow(self.MaxAB)
-                    self.DataCursorVerticalLayout.takeRow(self.MinAB)
+                    self.__takeRowargs(self.DataCursorVerticalLayout, self.BxPos, self.ByPos, self.MaxAB, self.MinAB)
                 elif self.counter_vertical_cursor == 0:
-                    self.DataCursorVerticalLayout.takeRow(self.AyPos)
-                    self.DataCursorVerticalLayout.takeRow(self.AxPos)
+                    self.__takeRowargs(self.DataCursorVerticalLayout, self.AyPos, self.AxPos)
             elif self.drop_down_add_cursor.currentIndex() == 0:
                 self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
                                                     f"Add Vertical cursor ({self.counter_vertical_cursor}/2)")
@@ -197,18 +196,25 @@ class RightBar(QWidget):
             if self.counter_horizontal_cursor <= 2 and self.counter_horizontal_cursor != 0:
                 self.__action_to_remove_currsor('horizontal')
                 if self.counter_horizontal_cursor ==1:
-                    self.DataCursorHorizontalLayout.takeRow(self.CyPos)
-                    self.DataCursorHorizontalLayout.takeRow(self.CxPos_one)
-                    self.DataCursorHorizontalLayout.takeRow(self.CxPos_two)
+                    self.__takeRowargs(self.DataCursorHorizontalLayout, self.CyPos, self.CxPos_one, self.CxPos_two)
                 elif self.counter_horizontal_cursor == 0:
-                    self.DataCursorHorizontalLayout.takeRow(self.DyPos)
-                    self.DataCursorHorizontalLayout.takeRow(self.DxPos_one)
-                    self.DataCursorHorizontalLayout.takeRow(self.DxPos_two)
-                    self.DataCursorHorizontalLayout.takeRow(self.Len_CD)
-                    self.DataCursorHorizontalLayout.takeRow(self.Len_DC)
+                    self.__takeRowargs(self.DataCursorHorizontalLayout, self.DyPos, \
+                                       self.DxPos_one, self.DxPos_two, self.Len_CD, self.Len_DC)
+                    
             elif self.drop_down_add_cursor.currentIndex() == 0:
                 self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
                                                     f"Add horizontal cursor ({self.counter_horizontal_cursor}/2)")
+
+    def __takeRowargs(self, z, *args):
+        for i in range(len(args)):
+            z.takeRow(args[i])
+
+    def __addRowArgs(self, z, *args):
+        for i in range(len(args)):
+            if type(args[i]) == tuple:
+                z.addRow(args[i][0], args[i][1])
+            else:
+                z.addRow(args[i])
 
     def _add_button_action(self):
         if self.drop_down_add_cursor.currentIndex() == 0:
@@ -222,16 +228,10 @@ class RightBar(QWidget):
             if self.counter_vertical_cursor != 2:
                 self.__action_to_add_currsor('vertical')
                 if self.counter_vertical_cursor == 1:
-                    self.DataCursorVerticalLayout.addRow(self.AxPos, self.AxPos_input)
-                    self.DataCursorVerticalLayout.addRow(self.AyPos, self.AyPos_input)
+                    self.__addRowArgs(self.DataCursorVerticalLayout, (self.AxPos, self.AxPos_input), (self.AyPos, self.AyPos_input))
                 if self.counter_vertical_cursor == 2:
-                    self.DataCursorVerticalLayout.addRow(self.BxPos, self.BxPos_input)
-                    self.DataCursorVerticalLayout.addRow(self.ByPos, self.ByPos_input)
-                    self.DataCursorVerticalLayout.addRow(self.MaxAB, self.MaxAB_input)
-                    self.DataCursorVerticalLayout.addRow(self.MinAB, self.MinAB_input)
-                # self.DataCursorVerticalWidget.setLayout(self.DataCursorVerticalLayout)
-                # self.CursorLayout.addWidget(self.DataCursorVerticalWidget, 0, self.counter_vertical_cursor-1)
-                
+                    self.__addRowArgs(self.DataCursorVerticalLayout, (self.BxPos, self.BxPos_input), (self.ByPos, self.ByPos_input),\
+                                    (self.MaxAB, self.MaxAB_input), (self.MinAB, self.MinAB_input) )
             else:
                 self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
                                                     f"Limit achived!")
@@ -240,16 +240,12 @@ class RightBar(QWidget):
             if self.counter_horizontal_cursor != 2:
                 self.__action_to_add_currsor('horizontal')
                 if self.counter_horizontal_cursor == 1:
-                    self.DataCursorHorizontalLayout.addRow(self.CyPos, self.CyPos_input)
-                    self.DataCursorHorizontalLayout.addRow(self.CxPos_one, self.CxPos_one_input)
-                    self.DataCursorHorizontalLayout.addRow(self.CxPos_two, self.CxPos_two_input)
+                    self.__addRowArgs(self.DataCursorHorizontalLayout, (self.CyPos, self.CyPos_input),\
+                                       (self.CxPos_one, self.CxPos_one_input), (self.CxPos_two, self.CxPos_two_input))
                     
                 if self.counter_horizontal_cursor == 2:
-                    self.DataCursorHorizontalLayout.addRow(self.DyPos, self.DyPos_input)
-                    self.DataCursorHorizontalLayout.addRow(self.DxPos_one, self.DxPos_one_input)
-                    self.DataCursorHorizontalLayout.addRow(self.DxPos_two, self.DxPos_two_input)
-                    self.DataCursorHorizontalLayout.addRow(self.Len_CD, self.Len_CD_input)
-                    self.DataCursorHorizontalLayout.addRow(self.Len_DC, self.Len_DC_input)
+                    self.__addRowArgs(self.DataCursorHorizontalLayout, (self.DyPos, self.DyPos_input), (self.DxPos_one, self.DxPos_one_input),\
+                                      (self.DxPos_two, self.DxPos_two_input), (self.Len_CD, self.Len_CD_input), (self.Len_DC, self.Len_DC_input))
             else:
                 self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
                                                     f"Limit achived!")
@@ -279,7 +275,7 @@ class RightBar(QWidget):
     def _buttonoption(self):
         self.button.clicked.connect(lambda: self._buttonwork())
         self.plot_reset_button.clicked.connect(lambda: self.usecase.plot.getPlotItem().enableAutoRange())
-        # lambda : self.usecase.plot.removeItem(self.usecase.line)
+        
         self.cursor_line.clicked.connect(self._add_button_action)
         self.remove_cursor.clicked.connect(self._remove_buttin_action)
         self.trigger_button.clicked.connect(self.__add_triger)
@@ -287,7 +283,6 @@ class RightBar(QWidget):
         self.button.setChecked(True)
         self.button.setMinimumSize(300, 30)
         self.plot_reset_button.setMinimumSize(300, 30)
-        #self.button.setAligment(Qt.AlignRight)
 
     def __add_triger(self):
         self.trigger_active = 1
@@ -298,25 +293,17 @@ class RightBar(QWidget):
 
         self.layout = QFormLayout()
         # adding widgets
-        self.layout.addRow(self.button)
-        self.layout.addRow(self.plot_reset_button)
-        self.layout.addRow(self.average, self.average_input)
-        self.layout.addRow(self.median, self.median_input)
-        self.layout.addRow(self.max, self.max_input)
-        self.layout.addRow(self.min, self.min_input)
-        self.layout.addRow(self.drop_down_add_cursor)
-        self.layout.addRow(self.cursor_line)
-        self.layout.addRow(self.remove_cursor)
-        # self.setMinimumSize(350, 600)
+        self.__addRowArgs(self.layout, self.button, self.plot_reset_button,(self.average, self.average_input), \
+                          (self.median, self.median_input), (self.max, self.max_input),\
+                         (self.min, self.min_input), self.drop_down_add_cursor, self.cursor_line, self.remove_cursor)
+        
         self.setFixedWidth(400)
         self.setLayout(self.layout)
         self.CursorWidget = QWidget()
         self.CursorLayout = QGridLayout()
-        # self.CursorWidget.setFixedHeight(1000)
+        
         self.CursorWidget.setLayout(self.CursorLayout)
-        self.layout.addRow(self.CursorWidget)
-        self.layout.addRow(self.trigger_button)
-        self.layout.addRow(self.Trigger_val, self.Trigger_val_input)
+        self.__addRowArgs(self.layout, self.CursorWidget, self.trigger_button, (self.Trigger_val, self.Trigger_val_input))
 
     def update_labels(self):
         if self.trigger_active == 1:
@@ -399,6 +386,7 @@ class MainWindow(QMainWindow):
         # creating menu bar at top of the app
         self._menumake()
         self.id = 0
+        self.showMaximized()
     
     def notify(self, receiver, event):
         try:
@@ -430,18 +418,8 @@ class MainWindow(QMainWindow):
         self.talking.emit(1)   
 
     def _plotSetUp(self):
-        # self.plot = pg.PlotWidget()
-        # self.pen = pg.mkPen(color= (0,255,0), width = 3)
-        # self.data_line =  pg.PlotCurveItem(self.xdata, self.ydata, pen=self.pen)
-        # self.CursorPen = pg.mkPen(color = (255,0,0),width = 2, style=Qt.DashLine)
+        
         self.plot.setBackground('w')
-        
-        
-        # self.line = pg.InfiniteLine(pos = (80,0), pen = self.CursorPen, movable = True)
-        # self.plot.addItem(self.line)
-        self.Cursor_pos = int()
-        self.Cross_point = int()
-        
         
         self.plot.addItem(self.data_line)    
         self.plot.setXRange(0,160)
@@ -492,11 +470,7 @@ class MainWindow(QMainWindow):
         
         if self.menu_bar.get_button_status() == True:
             self.data_line.setData(self.xdata, self.ydata)
-        # Cursor working good but i have to add some options but i will have to give i Right_bar
-        # self.Cursor_pos = int(self.line.getPos()[0])
-        # self.Cross_point = self.data_line.getData()[1][self.Cursor_pos]
-        # print(f"line x posttion  = {self.Cursor_pos}")
-        # print(f"line x Value  = {self.Cross_point}")
+
         if debug == 1:
             print(self.ydata)
         
