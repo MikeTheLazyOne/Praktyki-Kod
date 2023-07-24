@@ -114,8 +114,10 @@ class AnotherWindow(QWidget):
         self.ok_button.clicked.connect(self.ok_button_action)
         self.setLayout(layout)
         self.frameSize = 10
+
     def ok_button_action(self):
         self.usecase._plotSetUp()
+        self.close()
 
 class PlotOptions(QVBoxLayout):
 
@@ -178,13 +180,6 @@ class RightBar(QWidget):
         self.remove_cursor = QPushButton("Remove Currssor")
         self.trigger_button = QPushButton("AddTrigger")
 
-        # self.plot_choooser = CheckableComboBox()
-        # self.plot_choooser.addItem("plot-1")
-        # self.plot_choooser.addItem("plot-2")
-        # self.plot_choooser.addItem("plot-3")
-        # self.plot_choooser.addItem("plot-4")
-        # self.plot_choooser.addItem("plot-5")
-        # # self.plot_choooser.setEditable(True)
         
         self.drop_down_add_cursor = QComboBox()
         self.drop_down_add_cursor.addItem("---Choose currssor to add---")
@@ -372,7 +367,7 @@ class RightBar(QWidget):
             if self.counter_vertical_cursor != 2:
                 self.__action_to_add_currsor('vertical')
                 if self.counter_vertical_cursor == 1:
-                    self.__addRowArgs(self.DataCursorVerticalLayout, (self.Plot_of_intrest, self.Chooser), (self.AxPos, self.AxPos_input), (self.AyPos, self.AyPos_input))
+                    self.__addRowArgs(self.DataCursorVerticalLayout, (self.AxPos, self.AxPos_input), (self.AyPos, self.AyPos_input))
                 if self.counter_vertical_cursor == 2:
                     self.__addRowArgs(self.DataCursorVerticalLayout, (self.BxPos, self.BxPos_input), (self.ByPos, self.ByPos_input),\
                                     (self.MaxAB, self.MaxAB_input), (self.MinAB, self.MinAB_input) )
@@ -384,12 +379,11 @@ class RightBar(QWidget):
             if self.counter_horizontal_cursor != 2:
                 self.__action_to_add_currsor('horizontal')
                 if self.counter_horizontal_cursor == 1:
-                    self.__addRowArgs(self.DataCursorHorizontalLayout, (self.CyPos, self.CyPos_input),\
-                                       (self.CxPos_one, self.CxPos_one_input), (self.CxPos_two, self.CxPos_two_input))
+                    self.__addRowArgs(self.DataCursorHorizontalLayout, (self.CyPos, self.CyPos_input))
                     
                 if self.counter_horizontal_cursor == 2:
-                    self.__addRowArgs(self.DataCursorHorizontalLayout, (self.DyPos, self.DyPos_input), (self.DxPos_one, self.DxPos_one_input),\
-                                      (self.DxPos_two, self.DxPos_two_input), (self.Len_CD, self.Len_CD_input), (self.Len_DC, self.Len_DC_input))
+                    self.__addRowArgs(self.DataCursorHorizontalLayout, (self.DyPos, self.DyPos_input), \
+                                      (self.Len_CD, self.Len_CD_input))
             else:
                 self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
                                                     f"Limit achived!")
@@ -441,7 +435,7 @@ class RightBar(QWidget):
 
         self.layout = QFormLayout()
         # adding widgets
-        self.__addRowArgs(self.layout, self.button, self.plot_reset_button,(self.average, self.average_input), \
+        self.__addRowArgs(self.layout, self.button, self.plot_reset_button, (self.Plot_of_intrest, self.Chooser), (self.average, self.average_input), \
                           (self.median, self.median_input), (self.max, self.max_input),\
                          (self.min, self.min_input), self.drop_down_add_cursor, self.cursor_line, self.remove_cursor)
         
@@ -467,10 +461,10 @@ class RightBar(QWidget):
                 print("jest dół")
        
         if self.get_button_status() == True:
-            self.average_input.setText(f"{round(np.average(self.usecase.get_ydata()), 2)}")
-            self.median_input.setText(f"{round(np.median(self.usecase.get_ydata()), 2)}")
-            self.max_input.setText(f"{round(np.max(self.usecase.get_ydata()), 2)}")
-            self.min_input.setText(f"{round(np.min(self.usecase.get_ydata()), 2)}")
+            self.average_input.setText(f"{round(np.average(self.data_line[self.Chooser.currentIndex()].getData()[1]), 2)}")
+            self.median_input.setText(f"{round(np.median(self.data_line[self.Chooser.currentIndex()].getData()[1]), 2)}")
+            self.max_input.setText(f"{round(np.max(self.data_line[self.Chooser.currentIndex()].getData()[1]), 2)}")
+            self.min_input.setText(f"{round(np.min(self.data_line[self.Chooser.currentIndex()].getData()[1]), 2)}")
            
         else:
             if debug == 1:
@@ -496,11 +490,19 @@ class RightBar(QWidget):
                     self.MaxAB_input.setText(f"None")
                     self.MinAB_input.setText(f"None")
         if self.counter_horizontal_cursor != 0:
-            
-            CyPos = self.lineC.getYPos()
-            self.CyPos_input.setText(f"{round(CyPos, 2)}")
-            lista = self.data_line[self.Chooser.currentIndex()].getData()[1]
-            self.CxPos_one_input.setText(f"{closest_value(lista, CyPos)}")
+            if self.counter_horizontal_cursor != 0:
+                CyPos = self.lineC.getYPos()
+                self.CyPos_input.setText(f"{round(CyPos, 2)}")
+                if self.counter_horizontal_cursor == 2:
+                    DyPos = self.lineD.getYPos()
+                    self.DyPos_input.setText(f"{round(DyPos, 2)}")
+                    if CyPos > DyPos:
+                        Val_CD = CyPos - DyPos
+                        self.Len_CD_input.setText(f"{round(Val_CD, 2)}")
+                    elif CyPos < DyPos:
+                        Val_CD = DyPos - CyPos
+                        self.Len_CD_input.setText(f"{round(Val_CD, 2)}")
+                
             
 
 class MainWindow(QMainWindow):
@@ -587,24 +589,34 @@ class MainWindow(QMainWindow):
         self.talking.emit(1)   
 
     def _plotSetUp(self):
-        
+        self.data_line[0].clear()
         self.legend.clear()
         self.plot.setBackground('w')
         if self.newWindow.plotlayouts[0].get_check() == True:
             self.plot.addItem(self.data_line[0])    
             self.legend.addItem(self.plot.getPlotItem().listDataItems()[0], self.newWindow.plotlayouts[0].get_name())
+        elif self.newWindow.plotlayouts[0].get_check() != True:
+            self.data_line[0].clear()
         if self.newWindow.plotlayouts[1].get_check() == True:
             self.plot.addItem(self.data_line[1])    
             self.legend.addItem(self.plot.getPlotItem().listDataItems()[1], self.newWindow.plotlayouts[1].get_name())
+        elif self.newWindow.plotlayouts[1].get_check() != True:
+            self.data_line[1].clear()
         if self.newWindow.plotlayouts[2].get_check() == True:
             self.plot.addItem(self.data_line[2])    
             self.legend.addItem(self.plot.getPlotItem().listDataItems()[2], self.newWindow.plotlayouts[2].get_name())
+        elif self.newWindow.plotlayouts[2].get_check() != True:
+            self.data_line[2].clear()
         if self.newWindow.plotlayouts[3].get_check() == True:
             self.plot.addItem(self.data_line[3])    
             self.legend.addItem(self.plot.getPlotItem().listDataItems()[3], self.newWindow.plotlayouts[3].get_name())
+        elif self.newWindow.plotlayouts[3].get_check() != True:
+            self.data_line[3].clear()
         if self.newWindow.plotlayouts[4].get_check() == True:
             self.plot.addItem(self.data_line[4])    
             self.legend.addItem(self.plot.getPlotItem().listDataItems()[4], self.newWindow.plotlayouts[4].get_name())
+        elif self.newWindow.plotlayouts[4].get_check() != True:
+            self.data_line[4].clear()
         self.plot.setXRange(0,160)
         self.plot.addItem(self.legend)
     def _add_plot(self, z):
@@ -687,16 +699,16 @@ class MainWindow(QMainWindow):
                         self.ydata[1].append(data)
                 elif str(key) == self.newWindow.plotlayouts[2].get_id() and True == self.newWindow.plotlayouts[2].get_check():
                     for data in value:
-                        self.ydata[1].pop(0)
-                        self.ydata[1].append(data)
+                        self.ydata[2].pop(0)
+                        self.ydata[2].append(data)
                 elif str(key) == self.newWindow.plotlayouts[3].get_id() and True == self.newWindow.plotlayouts[3].get_check():
                     for data in value:
-                        self.ydata[1].pop(0)
-                        self.ydata[1].append(data)
+                        self.ydata[3].pop(0)
+                        self.ydata[3].append(data)
                 elif str(key) == self.newWindow.plotlayouts[4].get_id() and True == self.newWindow.plotlayouts[4].get_check():
                     for data in value:
-                        self.ydata[1].pop(0)
-                        self.ydata[1].append(data)
+                        self.ydata[4].pop(0)
+                        self.ydata[4].append(data)
                 else:
                     print("There are no Messages with those IDs or check is not marked")
                 
