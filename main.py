@@ -148,6 +148,7 @@ class PlotOptions(QVBoxLayout):
     
     def get_name(self):
         return self.plotname_input.text()
+    
     def get_id(self):
         return self.plotid_input.text()
     
@@ -163,6 +164,7 @@ class PlotOptions(QVBoxLayout):
     def __name_changed(self):
         #usecase -> mainWindow -> change plotname
         print(f"text changed of plot-{self.index} to: {self.plotname_input.displayText()}")
+        
     def __id_changed(self):
         print(f"id of plot-{self.index} to: {self.plotid_input.displayText()}")
 
@@ -277,13 +279,15 @@ class RightBar(QWidget):
         self.DataCursorVerticalWidget.setLayout(self.DataCursorVerticalLayout)
         self.CursorLayout.addWidget(self.DataCursorVerticalWidget, 0, 0)
         self.CursorLayout.addWidget(self.DataCursorHorizontalWidget, 0, 1)
+
     def _chooserSetup(self):
         self.Chooser.addItem("1")
         self.Chooser.addItem("2")
         self.Chooser.addItem("3")
         self.Chooser.addItem("4")
         self.Chooser.addItem("5")
-    def __action_to_remove_currsor(self, cur_type):
+
+    def __action_to_remove_currsor(self, cur_type = None):
         if cur_type == 'vertical':
             self.counter_vertical_cursor -= 1
             self.figure.removeItem(self.list_of_Hor_cursors[self.counter_vertical_cursor])
@@ -295,7 +299,7 @@ class RightBar(QWidget):
             self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
                                                     f"Add horizontal cursor ({self.counter_horizontal_cursor}/2)")
         else:
-            print(f"Pease specify type{cur_type}")
+            print(f"Pease specify type {cur_type}")
         
     def __action_to_add_currsor(self, cur_type):
         if cur_type == 'vertical':
@@ -717,8 +721,8 @@ class MainWindow(QMainWindow):
             self.addData.append(value)
             self.ydata[0] = self.ydata[0][1:] + self.addData
     
-    def get_ydata(self):
-        return self.ydata[0]
+    def get_ydata(self, z):
+        return self.ydata[z]
 
     
 
