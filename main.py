@@ -1,7 +1,7 @@
 import os, sys, random, can
 from PyQt5.QtCore import QThread, Qt, QTimer, QObject, pyqtSignal as Signal, pyqtSlot as Slot
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QMenu, QMenuBar,\
-    QLabel, QLineEdit, QFormLayout, QComboBox, QListWidget, QGridLayout
+    QLabel, QLineEdit, QFormLayout, QComboBox, QListWidget, QGridLayout, QCheckBox
 import time
 import sys
 import numpy as np
@@ -10,7 +10,7 @@ from PyQt5.QtGui import *
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
 import pyqtgraph.exporters
-
+import PyQt5
 debug = 0
 
 class Worker(QObject):
@@ -75,57 +75,80 @@ class CheckableComboBox(QComboBox):
         print(f"{self.currentIndex()} and status = {self.item.checkState()}")
 
 class AnotherWindow(QWidget):
-    """
-    This "window" is a QWidget. If it has no parent, it
-    will appear as a free-floating window as we want.
-    """
-    def __init__(self):
+    def __init__(self, title):
         super().__init__()
+        
+        self.setWindowTitle(title)
         layout = QVBoxLayout()
         self.label = QLabel("Another Window")
+        self.ok_button = QPushButton("Apply")
         self.widget_1 = QWidget()
         self.widget_2 = QWidget()
         self.widget_3 = QWidget()
         self.widget_4 = QWidget()
         self.widget_5 = QWidget()
-        self.plotlayout_1 = PlotOptions(1)
-        self.plotlayout_2 = PlotOptions(2)
-        self.plotlayout_3 = PlotOptions(3)
-        self.plotlayout_4 = PlotOptions(4)
-        self.plotlayout_5 = PlotOptions(5)
-        self.widget_1.setLayout(self.plotlayout_1)
-        self.widget_2.setLayout(self.plotlayout_2)
-        self.widget_3.setLayout(self.plotlayout_3)
-        self.widget_4.setLayout(self.plotlayout_4)
-        self.widget_5.setLayout(self.plotlayout_5)
+        self.plotlayouts = list()
+        self.plotlayouts.append(PlotOptions(1, True, "sinus", "123"))
+        self.plotlayouts.append(PlotOptions(2))
+        self.plotlayouts.append(PlotOptions(3))
+        self.plotlayouts.append(PlotOptions(4))
+        self.plotlayouts.append(PlotOptions(5))
+        self.widget_1.setLayout(self.plotlayouts[0]) 
+        self.widget_2.setLayout(self.plotlayouts[1])
+        self.widget_3.setLayout(self.plotlayouts[2])
+        self.widget_4.setLayout(self.plotlayouts[3])
+        self.widget_5.setLayout(self.plotlayouts[4])
         layout.addWidget(self.label)
         layout.addWidget(self.widget_1)
         layout.addWidget(self.widget_2)
         layout.addWidget(self.widget_3)
         layout.addWidget(self.widget_4)
         layout.addWidget(self.widget_5)
+        layout.addWidget(self.ok_button)
         self.setLayout(layout)
         self.frameSize = 10
 
 class PlotOptions(QVBoxLayout):
 
-    def __init__(self, index):
+    def __init__(self, index, status = False, name = "-- Choose name --", id = "-- Choose ID --"):
         super().__init__()
         self.index = index
         self.NewLayout = QHBoxLayout()
         self.plotname  = QLabel(f"Plot-{index} Name")
-        self.plotname_input = QLineEdit("-- Choose name --")
+        self.plotname_input = QLineEdit(name)
         self.plotid = QLabel("Plot ID:")
-        self.plotid_input = QLineEdit("-- Choose ID --")
+        self.plotid_input = QLineEdit(id)
+        self.check = QCheckBox()
+        self.check.setChecked(status)
+        self.NewLayout.addWidget(self.check)
         self.NewLayout.addWidget(self.plotname)
         self.NewLayout.addWidget(self.plotname_input)
         self.NewLayout.addWidget(self.plotid)
         self.NewLayout.addWidget(self.plotid_input)
+        
         self.widget_one = QWidget()
         self.widget_one.setLayout(self.NewLayout)
         self.addWidget(self.widget_one)
         self.plotname_input.editingFinished.connect(self.__name_changed)
         self.plotid_input.editingFinished.connect(self.__id_changed)
+
+    def get_index(self):
+        return self.index
+    
+    def get_name(self):
+        return self.plotname_input.text()
+    def get_id(self):
+        return self.plotid_input.text()
+    
+    def set_name(self, new_name):
+        self.plotname_input.setText(new_name)
+
+    def set_id(self, new_id):
+        self.plotid_input.setText(new_id)
+
+    def get_check(self):
+        return self.check.isChecked()
+    
     def __name_changed(self):
         #usecase -> mainWindow -> change plotname
         print(f"text changed of plot-{self.index} to: {self.plotname_input.displayText()}")
@@ -246,7 +269,6 @@ class RightBar(QWidget):
         self.DataCursorVerticalWidget.setLayout(self.DataCursorVerticalLayout)
         self.CursorLayout.addWidget(self.DataCursorVerticalWidget, 0, 0)
         self.CursorLayout.addWidget(self.DataCursorHorizontalWidget, 0, 1)
-
 
     def __action_to_remove_currsor(self, cur_type):
         if cur_type == 'vertical':
@@ -369,28 +391,32 @@ class RightBar(QWidget):
         self.max.setMinimumSize(150, 30)
         self.min.setMinimumSize(150, 30)
 
-    def _buttonwork(self):
+    def buttonwork(self):
         self.status = self.button.isChecked()
         print(f"Refresh status chaged to {self.status}")
 
     def get_button_status(self):
         return self.status
 
+    def set_button_status(self):
+        self.status = self.button.isDown()
+        
+
     def _buttonoption(self):
-        self.button.clicked.connect(lambda: self._buttonwork())
+        self.button.clicked.connect(lambda: self.buttonwork())
         self.plot_reset_button.clicked.connect(lambda: self.usecase.plot.getPlotItem().enableAutoRange())
         
         self.cursor_line.clicked.connect(self._add_button_action)
         self.remove_cursor.clicked.connect(self._remove_buttin_action)
         self.trigger_button.clicked.connect(self.__add_triger)
         self.button.setCheckable(True)
-        self.button.setChecked(True)
+        # self.button.setChecked(True)
         self.button.setMinimumSize(300, 30)
         self.plot_reset_button.setMinimumSize(300, 30)
 
     def __add_triger(self):
         self.trigger_active = 1
-        print("trigger added")
+        print("Trigger added")
         self.figure.addItem(self.trigger)
 
     def _layoutoption(self):
@@ -467,16 +493,34 @@ class MainWindow(QMainWindow):
 
         self.n_data = 160
         self.xdata = list(range(self.n_data))
-        rows, cols = (2, 160)
+        rows, cols = (5, 160)
         self.ydata = [[0 for i in range(cols)] for j in range(rows)]
 
         # its have to be here to give it abbility to have cusors and triggers
+
         self.plot = pg.PlotWidget()
-        self.pen = pg.mkPen(color= (0,255,0), width = 3)
-        self.data_line =  pg.PlotCurveItem(self.xdata, self.ydata[0], pen=self.pen)
+        # self.plot.addItem(self.data_line[0],text = "chuj")
+        self.pen = list()
+        self.pen.append(pg.mkPen(color= (0,255,0), width = 3))
+        self.pen.append(pg.mkPen(color= (255,0,0), width = 3))
+        self.pen.append(pg.mkPen(color= (0,0,255), width = 3))
+        self.pen.append(pg.mkPen(color= (255,255,0), width = 3))
+        self.pen.append(pg.mkPen(color= (0,255,255), width = 3))
+
+        self.data_line = list()
+        self.data_line.append(pg.PlotCurveItem(self.xdata, self.ydata[0], pen=self.pen[0]))
+        self.data_line.append(pg.PlotCurveItem(self.xdata, self.ydata[1], pen=self.pen[1]))
+        self.data_line.append(pg.PlotCurveItem(self.xdata, self.ydata[2], pen=self.pen[2]))
+        self.data_line.append(pg.PlotCurveItem(self.xdata, self.ydata[3], pen=self.pen[3]))
+        self.data_line.append(pg.PlotCurveItem(self.xdata, self.ydata[4], pen=self.pen[4]))
+        self.legend = pg.LegendItem()
+        
+
         # RightBar is a class to show information like median or average also later can be used for sending data
         self.menu_bar = RightBar(self, self.plot, self.data_line)
-
+        # self.showMaximized()
+        self.newWindow = AnotherWindow("Plot Configuration")
+        
         self._plotSetUp()
  
         self.worker = Worker(self)  # Worker
@@ -496,8 +540,7 @@ class MainWindow(QMainWindow):
         # creating menu bar at top of the app
         self._menumake()
         self.id = 0
-        # self.showMaximized()
-        self.newWindow = AnotherWindow()
+        
     
     def notify(self, receiver, event):
         try:
@@ -528,8 +571,16 @@ class MainWindow(QMainWindow):
     def _plotSetUp(self):
         
         self.plot.setBackground('w')
-        self.plot.addItem(self.data_line)    
+        if self.newWindow.plotlayouts[0].get_check() == True:
+            self.plot.addItem(self.data_line[0])    
         self.plot.setXRange(0,160)
+        self.legend.addItem(self.plot.getPlotItem().listDataItems()[0], self.newWindow.plotlayouts[0].get_name())
+        self.plot.addItem(self.legend)
+    def _add_plot(self, z):
+        self.plot.addItem(self.data_line[z])
+
+    def _remove_plot(self, z):
+        self.plot.removeItem(self.data_line[z])
 
     def _timerSetUp(self):
         
@@ -562,8 +613,11 @@ class MainWindow(QMainWindow):
         menubar.addMenu(helpmenu)
         menubar.addAction("&Plot Configuration", lambda: self._show_new_window())
         self.setMenuBar(menubar)
+
     def _show_new_window(self):
         self.newWindow.show()
+        self.menu_bar.button.click()
+        # add refresh after window is closed
 
     def _buttonwork(self):
 
@@ -574,7 +628,10 @@ class MainWindow(QMainWindow):
         tok = time.time()
        
         if self.menu_bar.get_button_status() == True:
-            self.data_line.setData(self.xdata, self.ydata[0])
+            for i in range(len(self.newWindow.plotlayouts)):
+                if self.newWindow.plotlayouts[i].get_check() == True:
+                    self.data_line[i].setData(self.xdata, self.ydata[i])
+            self.newWindow.close()
 
         tik = time.time()
 
@@ -589,7 +646,7 @@ class MainWindow(QMainWindow):
                 self.ydata[0].append(data)
         elif type(value) == dict:
             for key, value in value.items():
-                if key == 123:
+                if str(key) == self.newWindow.plotlayouts[0].get_id():
                     for data in value:
                         self.ydata[0].pop(0)
                         self.ydata[0].append(data)
@@ -598,7 +655,7 @@ class MainWindow(QMainWindow):
                         self.ydata[1].pop(0)
                         self.ydata[1].append(data)
                 else:
-                    print("Lipa")
+                    print("There are no Messages with those IDs")
                 
         else:
             self.addData = list()
@@ -719,7 +776,10 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
 
     Mwindow = MainWindow()
-    Mwindow.show()
+    
+    Mwindow.showNormal()
+    
+    Mwindow.newWindow.show()
     status = app.exec()
 
     print(f"Program Finished with status: {status}")
