@@ -24,16 +24,22 @@ class Worker(QObject):
     @Slot(int)
     def Talking(self,v):
         print("QThreads start operating")
+        
         tablica = np.linspace(-np.pi, np.pi, 161)
         tablica = np.sin(tablica)*2
+        cos = np.cos(tablica)
         lista = list(round(elem,2) for elem in tablica)
         lista = podziel_liste(lista, 4)
-        len_of_list = len(lista)
+        
+        lista_2 = list(round(elem,2) for elem in cos)
+        lista_2 = podziel_liste(lista_2, 4)
         counter = 0
         while (v == 1):
             time.sleep(0.2)
             data = {123:lista[counter]}
+            data_2 = {321:lista_2[counter]}
             self.RecvMessage.emit(data)
+            self.RecvMessage.emit(data_2)
             counter += 1
             if counter == 40:
                 counter = 0               
@@ -75,9 +81,9 @@ class CheckableComboBox(QComboBox):
         print(f"{self.currentIndex()} and status = {self.item.checkState()}")
 
 class AnotherWindow(QWidget):
-    def __init__(self, title):
+    def __init__(self, title, usecase):
         super().__init__()
-        
+        self.usecase = usecase
         self.setWindowTitle(title)
         layout = QVBoxLayout()
         self.label = QLabel("Another Window")
@@ -105,8 +111,11 @@ class AnotherWindow(QWidget):
         layout.addWidget(self.widget_4)
         layout.addWidget(self.widget_5)
         layout.addWidget(self.ok_button)
+        self.ok_button.clicked.connect(self.ok_button_action)
         self.setLayout(layout)
         self.frameSize = 10
+    def ok_button_action(self):
+        self.usecase._plotSetUp()
 
 class PlotOptions(QVBoxLayout):
 
@@ -514,12 +523,12 @@ class MainWindow(QMainWindow):
         self.data_line.append(pg.PlotCurveItem(self.xdata, self.ydata[3], pen=self.pen[3]))
         self.data_line.append(pg.PlotCurveItem(self.xdata, self.ydata[4], pen=self.pen[4]))
         self.legend = pg.LegendItem()
-        
+       
 
         # RightBar is a class to show information like median or average also later can be used for sending data
         self.menu_bar = RightBar(self, self.plot, self.data_line)
         # self.showMaximized()
-        self.newWindow = AnotherWindow("Plot Configuration")
+        self.newWindow = AnotherWindow("Plot Configuration", self)
         
         self._plotSetUp()
  
@@ -570,11 +579,24 @@ class MainWindow(QMainWindow):
 
     def _plotSetUp(self):
         
+        self.legend.clear()
         self.plot.setBackground('w')
         if self.newWindow.plotlayouts[0].get_check() == True:
             self.plot.addItem(self.data_line[0])    
+            self.legend.addItem(self.plot.getPlotItem().listDataItems()[0], self.newWindow.plotlayouts[0].get_name())
+        if self.newWindow.plotlayouts[1].get_check() == True:
+            self.plot.addItem(self.data_line[1])    
+            self.legend.addItem(self.plot.getPlotItem().listDataItems()[1], self.newWindow.plotlayouts[1].get_name())
+        if self.newWindow.plotlayouts[2].get_check() == True:
+            self.plot.addItem(self.data_line[2])    
+            self.legend.addItem(self.plot.getPlotItem().listDataItems()[2], self.newWindow.plotlayouts[2].get_name())
+        if self.newWindow.plotlayouts[3].get_check() == True:
+            self.plot.addItem(self.data_line[3])    
+            self.legend.addItem(self.plot.getPlotItem().listDataItems()[3], self.newWindow.plotlayouts[3].get_name())
+        if self.newWindow.plotlayouts[4].get_check() == True:
+            self.plot.addItem(self.data_line[4])    
+            self.legend.addItem(self.plot.getPlotItem().listDataItems()[4], self.newWindow.plotlayouts[4].get_name())
         self.plot.setXRange(0,160)
-        self.legend.addItem(self.plot.getPlotItem().listDataItems()[0], self.newWindow.plotlayouts[0].get_name())
         self.plot.addItem(self.legend)
     def _add_plot(self, z):
         self.plot.addItem(self.data_line[z])
@@ -646,16 +668,28 @@ class MainWindow(QMainWindow):
                 self.ydata[0].append(data)
         elif type(value) == dict:
             for key, value in value.items():
-                if str(key) == self.newWindow.plotlayouts[0].get_id():
+                if str(key) == self.newWindow.plotlayouts[0].get_id() and True == self.newWindow.plotlayouts[0].get_check():
                     for data in value:
                         self.ydata[0].pop(0)
                         self.ydata[0].append(data)
-                elif key == 321:
+                elif str(key) == self.newWindow.plotlayouts[1].get_id() and True == self.newWindow.plotlayouts[1].get_check():
+                    for data in value:
+                        self.ydata[1].pop(0)
+                        self.ydata[1].append(data)
+                elif str(key) == self.newWindow.plotlayouts[2].get_id() and True == self.newWindow.plotlayouts[2].get_check():
+                    for data in value:
+                        self.ydata[1].pop(0)
+                        self.ydata[1].append(data)
+                elif str(key) == self.newWindow.plotlayouts[3].get_id() and True == self.newWindow.plotlayouts[3].get_check():
+                    for data in value:
+                        self.ydata[1].pop(0)
+                        self.ydata[1].append(data)
+                elif str(key) == self.newWindow.plotlayouts[4].get_id() and True == self.newWindow.plotlayouts[4].get_check():
                     for data in value:
                         self.ydata[1].pop(0)
                         self.ydata[1].append(data)
                 else:
-                    print("There are no Messages with those IDs")
+                    print("There are no Messages with those IDs or check is not marked")
                 
         else:
             self.addData = list()
