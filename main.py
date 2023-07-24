@@ -241,6 +241,10 @@ class RightBar(QWidget):
         self.MaxAB_input = QLineEdit()
         self.MinAB_input = QLineEdit()
 
+        self.Plot_of_intrest = QLabel("Plot of interest")
+        self.Chooser = QComboBox()
+        self._chooserSetup()
+
         self.CyPos_input = QLineEdit()
         self.DyPos_input = QLineEdit()
         self.CxPos_one_input = QLineEdit()
@@ -278,7 +282,12 @@ class RightBar(QWidget):
         self.DataCursorVerticalWidget.setLayout(self.DataCursorVerticalLayout)
         self.CursorLayout.addWidget(self.DataCursorVerticalWidget, 0, 0)
         self.CursorLayout.addWidget(self.DataCursorHorizontalWidget, 0, 1)
-
+    def _chooserSetup(self):
+        self.Chooser.addItem("1")
+        self.Chooser.addItem("2")
+        self.Chooser.addItem("3")
+        self.Chooser.addItem("4")
+        self.Chooser.addItem("5")
     def __action_to_remove_currsor(self, cur_type):
         if cur_type == 'vertical':
             self.counter_vertical_cursor -= 1
@@ -363,7 +372,7 @@ class RightBar(QWidget):
             if self.counter_vertical_cursor != 2:
                 self.__action_to_add_currsor('vertical')
                 if self.counter_vertical_cursor == 1:
-                    self.__addRowArgs(self.DataCursorVerticalLayout, (self.AxPos, self.AxPos_input), (self.AyPos, self.AyPos_input))
+                    self.__addRowArgs(self.DataCursorVerticalLayout, (self.Plot_of_intrest, self.Chooser), (self.AxPos, self.AxPos_input), (self.AyPos, self.AyPos_input))
                 if self.counter_vertical_cursor == 2:
                     self.__addRowArgs(self.DataCursorVerticalLayout, (self.BxPos, self.BxPos_input), (self.ByPos, self.ByPos_input),\
                                     (self.MaxAB, self.MaxAB_input), (self.MinAB, self.MinAB_input) )
@@ -448,8 +457,8 @@ class RightBar(QWidget):
     def update_labels(self):
         if self.trigger_active == 1:
             self.Trigger_val_input.setText(f"{round(self.trigger.getYPos(), 2)}")
-            value = self.data_line.getData()[1][-1]
-            value_prev = self.data_line.getData()[1][-6]
+            value = self.data_line[self.Chooser.currentIndex()].getData()[1][-1]
+            value_prev = self.data_line[self.Chooser.currentIndex()].getData()[1][-6]
             if value >= round(self.trigger.getYPos(), 2) and round(self.trigger.getYPos(), 2) >= value_prev:
                 self.status = self.button.setChecked(False)
                 print("jest góra")
@@ -469,17 +478,17 @@ class RightBar(QWidget):
         if self.counter_vertical_cursor != 0:
             AxPos = self.lineA.getXPos()
             self.AxPos_input.setText(f"{int(AxPos)}")
-            self.AyPos_input.setText(f"{self.data_line.getData()[1][int(AxPos)]}")
+            self.AyPos_input.setText(f"{self.data_line[self.Chooser.currentIndex()].getData()[1][int(AxPos)]}")
             if self.counter_vertical_cursor == 2:
                 BxPos = self.lineB.getXPos()
                 self.BxPos_input.setText(f"{int(self.lineB.getXPos())}")
-                self.ByPos_input.setText(f"{self.data_line.getData()[1][int(BxPos)]}")
+                self.ByPos_input.setText(f"{self.data_line[self.Chooser.currentIndex()].getData()[1][int(BxPos)]}")
                 if AxPos < BxPos:
-                    MaxAB = self.data_line.getData()[1][int(AxPos):int(BxPos)]
+                    MaxAB = self.data_line[self.Chooser.currentIndex()].getData()[1][int(AxPos):int(BxPos)]
                     self.MaxAB_input.setText(f"{np.max(MaxAB)}")
                     self.MinAB_input.setText(f"{np.min(MaxAB)}")
                 elif BxPos < AxPos:
-                    MaxAB = self.data_line.getData()[1][int(BxPos):int(AxPos)]
+                    MaxAB = self.data_line[self.Chooser.currentIndex()].getData()[1][int(BxPos):int(AxPos)]
                     self.MaxAB_input.setText(f"{np.max(MaxAB)}")
                     self.MinAB_input.setText(f"{np.min(MaxAB)}")
                 else:
@@ -490,7 +499,7 @@ class RightBar(QWidget):
             
             CyPos = self.lineC.getYPos()
             self.CyPos_input.setText(f"{round(CyPos, 2)}")
-            lista = self.data_line.getData()[1]
+            lista = self.data_line[self.Chooser.currentIndex()].getData()[1]
             self.CxPos_one_input.setText(f"{closest_value(lista, CyPos)}")
             
 
