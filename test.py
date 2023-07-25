@@ -1,1 +1,15 @@
-print("test")
+self.zero.clicked.connect(lambda:self.activate_button("0"))
+
+        self.one.clicked.connect(lambda:self.activate_button("1"))
+        self.two.clicked.connect(lambda:self.activate_button("2"))
+        self.three.clicked.connect(lambda:self.activate_button("3"))
+        self.four.clicked.connect(lambda:self.activate_button("4"))
+        self.five.clicked.connect(lambda:self.activate_button("5"))
+        self.six.clicked.connect(lambda:self.activate_button("6"))
+        self.seven.clicked.connect(lambda:self.activate_button("7"))
+        self.eight.clicked.connect(lambda:self.activate_button("8"))
+        self.nine.clicked.connect(lambda:self.activate_button("9"))
+
+        self.back.clicked.connect(self.back_button)
+        self.ok.clicked.connect(self.ok_button)
+        self.setLayout(self.layout)

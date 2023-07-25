@@ -45,6 +45,72 @@ class Worker(QObject):
             counter += 1
             if counter == 40:
                 counter = 0
+
+class NumPad(QWidget):
+
+    def __init__(self):
+        super().__init__()
+        self.layout = QGridLayout()
+
+        self.numer = str()
+        self.Line = QLineEdit()
+        self.one = QPushButton('1')
+        self.two = QPushButton('2')
+        self.three = QPushButton('3')
+
+        self.four = QPushButton('4')
+        self.five = QPushButton('5')
+        self.six = QPushButton('6')
+
+        self.seven = QPushButton('7')
+        self.eight = QPushButton('8')
+        self.nine = QPushButton('9')
+
+        self.zero = QPushButton('0')
+        self.back = QPushButton('<-')
+        self.ok = QPushButton("ok")
+        self.layout.addWidget(self.Line,0,1)
+
+        self.layout.addWidget(self.one, 1, 0)
+        self.layout.addWidget(self.two, 1, 1)
+        self.layout.addWidget(self.three, 1, 2)
+
+        self.layout.addWidget(self.four, 2, 0)
+        self.layout.addWidget(self.five, 2, 1)
+        self.layout.addWidget(self.six, 2, 2)
+
+        self.layout.addWidget(self.seven, 3, 0)
+        self.layout.addWidget(self.eight, 3, 1)
+        self.layout.addWidget(self.nine, 3, 2)
+
+        self.layout.addWidget(self.zero, 4, 0)
+        self.layout.addWidget(self.back, 4, 1)
+        self.layout.addWidget(self.ok, 4, 2)
+        self.zero.clicked.connect(lambda:self.activate_button("0"))
+
+        self.one.clicked.connect(lambda:self.activate_button("1"))
+        self.two.clicked.connect(lambda:self.activate_button("2"))
+        self.three.clicked.connect(lambda:self.activate_button("3"))
+        self.four.clicked.connect(lambda:self.activate_button("4"))
+        self.five.clicked.connect(lambda:self.activate_button("5"))
+        self.six.clicked.connect(lambda:self.activate_button("6"))
+        self.seven.clicked.connect(lambda:self.activate_button("7"))
+        self.eight.clicked.connect(lambda:self.activate_button("8"))
+        self.nine.clicked.connect(lambda:self.activate_button("9"))
+
+        self.back.clicked.connect(self.back_button)
+        self.ok.clicked.connect(self.ok_button)
+        self.setLayout(self.layout)
+    def activate_button(self, x):
+        self.numer = self.numer + x
+        self.Line.setText(self.numer)
+    def back_button(self):
+        self.numer = self.numer[:len(self.numer)-1]
+        self.Line.setText(self.numer)
+    def get_numer(self):
+        return self.numer
+    def ok_button(self):
+        print("Ok")
 class Postman(QObject):
     Yepper = Signal(str)
     def __init__(self):
@@ -209,12 +275,24 @@ class PlotOptions(QVBoxLayout):
         self.NewLayout.addWidget(self.plotname_input)
         self.NewLayout.addWidget(self.plotid)
         self.NewLayout.addWidget(self.plotid_input)
+
+        self.testButton = QPushButton("test")
+        self.testButton.clicked.connect(self.akcja)
         
+        self.NewLayout.addWidget(self.testButton)
+
         self.widget_one = QWidget()
         self.widget_one.setLayout(self.NewLayout)
         self.addWidget(self.widget_one)
         self.plotname_input.editingFinished.connect(self.__name_changed)
         self.plotid_input.editingFinished.connect(self.__id_changed)
+        
+        self.testButton = QPushButton("test")
+        self.testButton.clicked.connect(self.akcja)
+        
+    def akcja(self):
+        widge = NumPad()
+        widge.show()
 
     def get_index(self):
         return self.index
@@ -416,8 +494,10 @@ class RightBar(QWidget):
                 
                 if self.counter_vertical_cursor ==1:
                     self.__takeRowargs(self.DataCursorVerticalLayout, self.BxPos, self.ByPos, self.MaxAB, self.MinAB)
+                    self.__Visibleargs(False, self.BxPos, self.ByPos, self.MaxAB, self.MinAB)
                 elif self.counter_vertical_cursor == 0:
                     self.__takeRowargs(self.DataCursorVerticalLayout, self.AyPos, self.AxPos)
+                    self.__Visibleargs(False, self.AyPos, self.AxPos)
             elif self.drop_down_add_cursor.currentIndex() == 0:
                 self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
                                                     f"Add Vertical cursor ({self.counter_vertical_cursor}/2)")
@@ -428,22 +508,31 @@ class RightBar(QWidget):
                 self.__action_to_remove_currsor('horizontal')
                 if self.counter_horizontal_cursor ==1:
                     self.__takeRowargs(self.DataCursorHorizontalLayout, self.CyPos, self.CxPos_one, self.CxPos_two)
+                    self.__Visibleargs(False, self.CyPos, self.CxPos_one, self.CxPos_two)
                 elif self.counter_horizontal_cursor == 0:
                     self.__takeRowargs(self.DataCursorHorizontalLayout, self.DyPos, \
                                        self.DxPos_one, self.DxPos_two, self.Len_CD, self.Len_DC)
+                    self.__Visibleargs(False, self.DyPos, self.DxPos_one, self.DxPos_two, self.Len_CD, self.Len_DC)
                     
             elif self.drop_down_add_cursor.currentIndex() == 0:
                 self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
                                                     f"Add horizontal cursor ({self.counter_horizontal_cursor}/2)")
+                
 
     def __takeRowargs(self, z, *args):
         for i in range(len(args)):
             z.takeRow(args[i])
-
+            
+            args[i].setVisible(False)
+    def __Visibleargs(self,status=False, *args):
+        for i in range(len(args)):
+            args[i].setVisible(status)
+            
     def __addRowArgs(self, z, *args):
         for i in range(len(args)):
             if type(args[i]) == tuple:
                 z.addRow(args[i][0], args[i][1])
+                args[i][1].setVisible(True)
             else:
                 z.addRow(args[i])
 
@@ -460,9 +549,12 @@ class RightBar(QWidget):
                 self.__action_to_add_currsor('vertical')
                 if self.counter_vertical_cursor == 1:
                     self.__addRowArgs(self.DataCursorVerticalLayout, (self.AxPos, self.AxPos_input), (self.AyPos, self.AyPos_input))
+                    self.__Visibleargs(True, self.AxPos, self.AxPos_input, self.AyPos, self.AyPos_input)
                 if self.counter_vertical_cursor == 2:
                     self.__addRowArgs(self.DataCursorVerticalLayout, (self.BxPos, self.BxPos_input), (self.ByPos, self.ByPos_input),\
                                     (self.MaxAB, self.MaxAB_input), (self.MinAB, self.MinAB_input) )
+                    self.__Visibleargs(True, self.BxPos, self.BxPos_input, self.ByPos, self.ByPos_input,\
+                                       self.MaxAB, self.MaxAB_input, self.MinAB, self.MinAB_input )
             else:
                 self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
                                                     f"Limit achived!")
@@ -472,10 +564,11 @@ class RightBar(QWidget):
                 self.__action_to_add_currsor('horizontal')
                 if self.counter_horizontal_cursor == 1:
                     self.__addRowArgs(self.DataCursorHorizontalLayout, (self.CyPos, self.CyPos_input))
-                    
+                    self.__Visibleargs(True, self.CyPos, self.CyPos_input)
                 if self.counter_horizontal_cursor == 2:
                     self.__addRowArgs(self.DataCursorHorizontalLayout, (self.DyPos, self.DyPos_input), \
                                       (self.Len_CD, self.Len_CD_input))
+                    self.__Visibleargs(True, self.DyPos, self.DyPos_input, self.Len_CD, self.Len_CD_input)
             else:
                 self.drop_down_add_cursor.setItemText(self.drop_down_add_cursor.currentIndex(),\
                                                     f"Limit achived!")
