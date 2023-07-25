@@ -1,7 +1,9 @@
 import os, sys, random, can
+import typing
+from PyQt5 import QtCore
 from PyQt5.QtCore import QThread, Qt, QTimer, QObject, pyqtSignal as Signal, pyqtSlot as Slot
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QMenu, QMenuBar,\
-    QLabel, QLineEdit, QFormLayout, QComboBox, QListWidget, QGridLayout, QCheckBox
+    QLabel, QLineEdit, QFormLayout, QComboBox, QListWidget, QGridLayout, QCheckBox, QStyle
 import time
 import sys
 import numpy as np
@@ -42,44 +44,115 @@ class Worker(QObject):
             self.RecvMessage.emit(data_2)
             counter += 1
             if counter == 40:
-                counter = 0               
+                counter = 0
+class Postman(QObject):
+    Yepper = Signal(str)
+    def __init__(self):
+        super().__init__()
+        
+    @Slot(dict)
+    def Running(self, message):
+        print("HE is talking")
+        # os.system('sudo ip link set can0 type can bitrate 100000')
+        # os.system('sudo ifconfig can0 up')
 
-class CheckableComboBox(QComboBox):
-  
-    # constructor
-    def __init__(self, parent = None):
-        super(CheckableComboBox, self).__init__(parent)
-        self.view().pressed.connect(self.handleItemPressed)
-        self.setModel(QStandardItemModel(self))
-  
-    count = 0
-    # action called when item get checked
+        # can0 = can.interface.Bus(channel = 'can0', bustype = 'socketcan')# socketcan_native
+
+        # for id, data in message.items():
+        #     id = hex(id)
+        #     data = bytearray(data)
+        #     msg = can.Message(arbitration_id=id, data= data, is_extended_id=False)
+        #     can0.send(msg)
+        # os.system('sudo ifconfig can0 down')
+class Trigger_buttons(QHBoxLayout):
+    def __init__(self):
+        super().__init__()
+        self.start = QPushButton()
+        self.stop = QPushButton()
+        
+       
+        
+        self.start.setIcon(QIcon('ok_2.png'))
+        self.stop.setIcon(QIcon('stop_3.png'))
+        
+        
+        self.start.setIconSize(QSize(50,50))
+        self.stop.setIconSize(QSize(50,50))
+        
+
+        self.start.setFixedHeight(75)
+        self.start.setFixedWidth(75)
+        self.stop.setFixedHeight(75)
+        self.stop.setFixedWidth(75)
+        
+
+        self.start.setCheckable(True)
+        self.stop.setCheckable(True)
+        self.start.isChecked()
+
+        self.start.clicked.connect(self.start_action)
+        self.stop.clicked.connect(self.stop_action)
+        
+
+        self.addWidget(self.start)
+        self.addWidget(self.stop)
+        
     
-  
-    # when any item get pressed
-    def handleItemPressed(self, index):
-  
-        # getting the item
-        self.item = self.model().itemFromIndex(index)
-  
-        # checking if item is checked
-        if self.item.checkState() == Qt.Checked:
-  
-            # making it unchecked
-            self.item.setCheckState(Qt.Unchecked)
-  
-        # if not checked
-        else:
-            # making the item checked
-            self.item.setCheckState(Qt.Checked)
-  
-            self.count += 1
-  
-           
-            self.do_action(self.currentIndex)
-    def do_action(self, index):
-        print(f"{self.currentIndex()} and status = {self.item.checkState()}")
+    def start_action(self):
+        self.status_start = self.start.isChecked()
+        if self.status_stop == True:
+            self.stop.click()
+    def stop_action(self):
+        self.status_stop = self.stop.isChecked()
+        if self.status_start == True:
+            self.start.click()
+    
+    def get_start(self):
+        return self.status_start
+    def get_stop(self):
+        return self.status_stop
+    
+class SendWindow(QWidget):
+    talking = Signal(dict)
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Send Message")
+        self.layout = QHBoxLayout()
+        self.id = QLabel("ID: ")
+        self.id_input  = QLineEdit()
+        self.message = QLabel("Message: ")
+        self.message_input = QLineEdit()
+        self.send  = QPushButton("Send")
+        self.send.clicked.connect(self.send_action)
 
+        self.layout.addWidget(self.id)
+        self.layout.addWidget(self.id_input)
+        self.layout.addWidget(self.message)
+        self.layout.addWidget(self.message_input)
+        self.layout.addWidget(self.send)
+
+        self.worker = Postman()  # Worker
+        self.worker_thread = QThread()  # Thread
+        self._threadSetUp()
+        
+        self.setLayout(self.layout)
+
+    def send_action(self):
+        # Wokrker thread taking message and sending it somewhere
+        data = {int(self.id_input.text()):int(self.message_input.text())}
+        print(f"Message with {self.id_input.text()} was send with data: {self.message_input.text()}")
+        print(data)
+        self.talking.emit(data)
+        self.close()
+    def _threadSetUp(self):
+        
+        self.worker.Yepper.connect(self.confirmation)
+        self.talking.connect(self.worker.Running)
+        self.worker.moveToThread(self.worker_thread)
+        self.worker_thread.start()
+        
+    def confirmation(self, text):
+        print(text)
 class AnotherWindow(QWidget):
     def __init__(self, title, usecase):
         super().__init__()
@@ -177,12 +250,19 @@ class RightBar(QWidget):
         self.data_line = data_line
         
         self.button = QPushButton("Refressh")
+        self.button.setIcon(QIcon('go_3.png'))
         self.plot_reset_button = QPushButton("Plot Resset")
+        self.plot_reset_button.setIcon(QIcon('restart.png'))
         self.cursor_line = QPushButton("Add Currssor")
         self.remove_cursor = QPushButton("Remove Currssor")
         self.trigger_button = QPushButton("AddTrigger")
 
-        
+        self.ButtonsHlayout = QHBoxLayout()
+        self.ButtonsHlayout.addWidget(self.button)
+        self.ButtonsHlayout.addWidget(self.plot_reset_button)
+        self.Widget_BHL = QWidget()
+        self.Widget_BHL.setLayout(self.ButtonsHlayout)
+
         self.drop_down_add_cursor = QComboBox()
         self.drop_down_add_cursor.addItem("---Choose currssor to add---")
         self.drop_down_add_cursor.addItem("Add Vertical Currssor")
@@ -252,7 +332,7 @@ class RightBar(QWidget):
         self.Len_DC_input = QLineEdit()
 
         self.Trigger_val_input = QLineEdit()
-        self.trigger_active = 0
+        self.trigger_active = False
         self.trigger_start = QPushButton("Start Trigger")
         self.trigger_stop = QPushButton("Stop Trigger")
 
@@ -264,7 +344,10 @@ class RightBar(QWidget):
         self.timer.timeout.connect(self.update_labels)
         self.timer.start()
 
-        self._layoutoption()
+        self.CursorWidget = QWidget()
+        self.CursorLayout = QGridLayout()
+        
+
         self.counter_vertical_cursor = 0
         self.counter_horizontal_cursor = 0
 
@@ -279,6 +362,11 @@ class RightBar(QWidget):
         self.DataCursorVerticalWidget.setLayout(self.DataCursorVerticalLayout)
         self.CursorLayout.addWidget(self.DataCursorVerticalWidget, 0, 0)
         self.CursorLayout.addWidget(self.DataCursorHorizontalWidget, 0, 1)
+
+        self.trigger_buttons = Trigger_buttons()
+        self.Widget_for_trigger_buttons = QWidget()
+        self.Widget_for_trigger_buttons.setLayout(self.trigger_buttons)
+        self._layoutoption()
 
     def _chooserSetup(self):
         self.Chooser.addItem("1")
@@ -427,36 +515,34 @@ class RightBar(QWidget):
         self.trigger_button.clicked.connect(self.__add_triger)
         self.button.setCheckable(True)
         # self.button.setChecked(True)
-        self.button.setMinimumSize(300, 30)
-        self.plot_reset_button.setMinimumSize(300, 30)
+        self.button.setMinimumHeight(50)
+        self.plot_reset_button.setMinimumHeight(50) 
 
     def __add_triger(self):
-        self.trigger_active = 1
+        self.trigger_active = True
         print("Trigger added")
         self.figure.addItem(self.trigger)
+        self.__addRowArgs(self.layout, self.Widget_for_trigger_buttons)
 
     def _layoutoption(self):
 
         self.layout = QFormLayout()
         # adding widgets
-        self.__addRowArgs(self.layout, self.button, self.plot_reset_button, (self.Plot_of_intrest, self.Chooser), (self.average, self.average_input), \
+        self.__addRowArgs(self.layout, self.Widget_BHL, (self.Plot_of_intrest, self.Chooser), (self.average, self.average_input), \
                           (self.median, self.median_input), (self.max, self.max_input),\
                          (self.min, self.min_input), self.drop_down_add_cursor, self.cursor_line, self.remove_cursor)
         
         self.setFixedWidth(400)
         self.setLayout(self.layout)
-        self.CursorWidget = QWidget()
-        self.CursorLayout = QGridLayout()
-        
         self.CursorWidget.setLayout(self.CursorLayout)
         self.__addRowArgs(self.layout, self.CursorWidget, self.trigger_button,\
                            (self.Trigger_val, self.Trigger_val_input))
 
     def update_labels(self):
-        if self.trigger_active == 1:
+        if self.trigger_active == True and self.trigger_buttons.get_start() == True:
             self.Trigger_val_input.setText(f"{round(self.trigger.getYPos(), 2)}")
-            value = self.data_line[self.Chooser.currentIndex()].getData()[1][-1]
-            value_prev = self.data_line[self.Chooser.currentIndex()].getData()[1][-6]
+            value = self.data_line[self.Chooser.currentIndex()].getData()[1][20]
+            value_prev = self.data_line[self.Chooser.currentIndex()].getData()[1][30]
             if value >= round(self.trigger.getYPos(), 2) and round(self.trigger.getYPos(), 2) >= value_prev:
                 self.status = self.button.setChecked(False)
                 print("jest góra")
@@ -659,8 +745,12 @@ class MainWindow(QMainWindow):
         menubar.addMenu(filemenu)
         menubar.addMenu(helpmenu)
         menubar.addAction("&Plot Configuration", lambda: self._show_new_window())
+        menubar.addAction("&Send Message", lambda: self._send_new_window())
         self.setMenuBar(menubar)
-
+    def _send_new_window(self):
+        self.send_window = SendWindow()
+        self.send_window.show()
+        
     def _show_new_window(self):
         self.newWindow.show()
         self.menu_bar.button.click()
@@ -714,7 +804,8 @@ class MainWindow(QMainWindow):
                         self.ydata[4].pop(0)
                         self.ydata[4].append(data)
                 else:
-                    print("There are no Messages with those IDs or check is not marked")
+                    #print("There are no Messages with those IDs or check is not marked")
+                    pass
                 
         else:
             self.addData = list()
@@ -836,7 +927,7 @@ if __name__ == '__main__':
 
     Mwindow = MainWindow()
     
-    Mwindow.showNormal()
+    Mwindow.showMaximized()
     
     Mwindow.newWindow.show()
     status = app.exec()
