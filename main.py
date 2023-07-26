@@ -13,6 +13,9 @@ from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
 import pyqtgraph.exporters
 import PyQt5
+from string import ascii_lowercase as alc
+
+
 debug = 0
 
 class Worker(QObject):
@@ -45,11 +48,88 @@ class Worker(QObject):
             counter += 1
             if counter == 40:
                 counter = 0
+class Keyboard(QWidget):
 
+
+    def __init__(self, usecase):
+        super().__init__()
+        self.layout_1 = QHBoxLayout()
+        self.layout_2 = QHBoxLayout()
+        self.layout_0 = QHBoxLayout()
+        self.usecase = usecase
+        self.layout = QVBoxLayout()
+        self.name = QLineEdit()
+        self.layout_0.addWidget(self.name)
+        self.text = str()
+        self.buttons = list()
+        for i in alc:
+            elem = QPushButton(str(i))
+            self.buttons.append(elem)
+            if i <= 'm':
+                self.layout_1.addWidget(elem)
+            else:
+                self.layout_2.addWidget(elem)
+        # for i in range(len(self.buttons)):
+        #     self.buttons[i].clicked.connect(lambda: self.akcja(alc[i]))
+        #     print(alc[i])
+        self.buttons[0].clicked.connect(lambda: self.akcja(alc[0]))
+        self.buttons[1].clicked.connect(lambda: self.akcja(alc[1]))
+        self.buttons[2].clicked.connect(lambda: self.akcja(alc[2]))
+        self.buttons[3].clicked.connect(lambda: self.akcja(alc[3]))
+        self.buttons[4].clicked.connect(lambda: self.akcja(alc[4]))
+        self.buttons[5].clicked.connect(lambda: self.akcja(alc[5]))
+        self.buttons[6].clicked.connect(lambda: self.akcja(alc[6]))
+        self.buttons[7].clicked.connect(lambda: self.akcja(alc[7]))
+        self.buttons[8].clicked.connect(lambda: self.akcja(alc[8]))
+        self.buttons[9].clicked.connect(lambda: self.akcja(alc[9]))
+        self.buttons[10].clicked.connect(lambda: self.akcja(alc[10]))
+        self.buttons[11].clicked.connect(lambda: self.akcja(alc[11]))
+        self.buttons[12].clicked.connect(lambda: self.akcja(alc[12]))
+        self.buttons[13].clicked.connect(lambda: self.akcja(alc[13]))
+        self.buttons[14].clicked.connect(lambda: self.akcja(alc[14]))
+        self.buttons[15].clicked.connect(lambda: self.akcja(alc[15]))
+        self.buttons[16].clicked.connect(lambda: self.akcja(alc[16]))
+        self.buttons[17].clicked.connect(lambda: self.akcja(alc[17]))
+        self.buttons[18].clicked.connect(lambda: self.akcja(alc[18]))
+        self.buttons[19].clicked.connect(lambda: self.akcja(alc[19]))
+        self.buttons[21].clicked.connect(lambda: self.akcja(alc[21]))
+        self.buttons[22].clicked.connect(lambda: self.akcja(alc[22]))
+        self.buttons[23].clicked.connect(lambda: self.akcja(alc[23]))
+        self.buttons[24].clicked.connect(lambda: self.akcja(alc[24]))
+        self.buttons[25].clicked.connect(lambda: self.akcja(alc[25]))
+        self.buttons[20].clicked.connect(lambda: self.akcja(alc[20]))
+
+        self.ok = QPushButton("ok")
+        self.notok = QPushButton("<-")
+        
+        self.ok.clicked.connect(self.akcja_ok)
+        self.notok.clicked.connect(self.akcja_notok)
+        
+        self.layout_4 = QHBoxLayout()
+        self.layout_4.addWidget(self.notok)
+        self.layout_4.addWidget(self.ok)
+
+        self.layout.addLayout(self.layout_0)
+        self.layout.addLayout(self.layout_1)
+        self.layout.addLayout(self.layout_2)
+        self.layout.addLayout(self.layout_4)
+        self.setLayout(self.layout)
+    def akcja(self, letter):
+        self.text = self.text + letter
+        self.name.setText(self.text)
+    def akcja_ok(self):
+        self.usecase.For_name()
+        self.close()
+    def akcja_notok(self):
+        self.text = self.text[:len(self.text)-1]
+        self.name.setText(self.name)
+    def get_name(self):
+        return self.name
 class NumPad(QWidget):
 
-    def __init__(self):
+    def __init__(self, usecase):
         super().__init__()
+        self.usecase = usecase
         self.layout = QGridLayout()
 
         self.numer = str()
@@ -101,6 +181,7 @@ class NumPad(QWidget):
         self.back.clicked.connect(self.back_button)
         self.ok.clicked.connect(self.ok_button)
         self.setLayout(self.layout)
+
     def activate_button(self, x):
         self.numer = self.numer + x
         self.Line.setText(self.numer)
@@ -110,7 +191,10 @@ class NumPad(QWidget):
     def get_numer(self):
         return self.numer
     def ok_button(self):
+        self.usecase.For_id()
+        self.close()
         print("Ok")
+    
 class Postman(QObject):
     Yepper = Signal(str)
     def __init__(self):
@@ -269,17 +353,24 @@ class PlotOptions(QVBoxLayout):
         self.plotid = QLabel("Plot ID:")
         self.plotid_input = QLineEdit(id)
         self.check = QCheckBox()
+        self.PlotNameButton = QPushButton("Plot name")
+        self.PlotNameButton.clicked.connect(self.akcja_name)
+        self.PlotIdButton = QPushButton("Plot ID")
+        self.PlotIdButton.clicked.connect(self.akcja_id)
         self.check.setChecked(status)
         self.NewLayout.addWidget(self.check)
         self.NewLayout.addWidget(self.plotname)
         self.NewLayout.addWidget(self.plotname_input)
+        self.NewLayout.addWidget(self.PlotNameButton)
         self.NewLayout.addWidget(self.plotid)
         self.NewLayout.addWidget(self.plotid_input)
 
-        self.testButton = QPushButton("test")
-        self.testButton.clicked.connect(self.akcja)
         
-        self.NewLayout.addWidget(self.testButton)
+
+        
+
+        
+        self.NewLayout.addWidget(self.PlotIdButton)
 
         self.widget_one = QWidget()
         self.widget_one.setLayout(self.NewLayout)
@@ -287,13 +378,20 @@ class PlotOptions(QVBoxLayout):
         self.plotname_input.editingFinished.connect(self.__name_changed)
         self.plotid_input.editingFinished.connect(self.__id_changed)
         
-        self.testButton = QPushButton("test")
-        self.testButton.clicked.connect(self.akcja)
         
-    def akcja(self):
-        widge = NumPad()
-        widge.show()
-
+    def For_id(self):
+        self.plotid_input.setText(self.widge_id.get_numer())    
+    def For_name(self):
+        self.plotname_input.setText(self.widge_name.get_name()) 
+        
+    def akcja_id(self):
+        self.widge_id = NumPad(self)
+        self.widge_id.show()
+    def akcja_name(self):
+        # keyboard zamiast NumPad
+        self.widge_name = Keyboard(self)
+        self.widge_name.show()
+    
     def get_index(self):
         return self.index
     
