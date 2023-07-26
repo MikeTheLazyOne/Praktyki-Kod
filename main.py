@@ -62,6 +62,7 @@ class Keyboard(QWidget):
         self.layout_0.addWidget(self.name)
         self.text = str()
         self.buttons = list()
+        
         for i in alc:
             elem = QPushButton(str(i))
             self.buttons.append(elem)
@@ -122,9 +123,9 @@ class Keyboard(QWidget):
         self.close()
     def akcja_notok(self):
         self.text = self.text[:len(self.text)-1]
-        self.name.setText(self.name)
+        self.name.setText(self.text)
     def get_name(self):
-        return self.name
+        return self.text
 class NumPad(QWidget):
 
     def __init__(self, usecase):
@@ -365,6 +366,8 @@ class PlotOptions(QVBoxLayout):
         self.NewLayout.addWidget(self.plotid)
         self.NewLayout.addWidget(self.plotid_input)
 
+        self.check.setFixedHeight(25)
+        self.check.setFixedWidth(25)
         
 
         
