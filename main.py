@@ -50,19 +50,25 @@ class Worker(QObject):
                 counter = 0
 class Keyboard(QWidget):
 
-
     def __init__(self, usecase):
         super().__init__()
+        self.usecase = usecase
+        self.name = QLineEdit() # Line to see wwat was written
+    
+        self.text = str() # String for storing data
+        self.buttons = list() # List to make it esier to write all buttons
+        
+        self.layout = QVBoxLayout()
         self.layout_1 = QHBoxLayout()
         self.layout_2 = QHBoxLayout()
+        # there is no layout_3
+        self.layout_4 = QHBoxLayout()
         self.layout_0 = QHBoxLayout()
-        self.usecase = usecase
-        self.layout = QVBoxLayout()
-        self.name = QLineEdit()
-        self.layout_0.addWidget(self.name)
-        self.text = str()
-        self.buttons = list()
         
+        self.ok = QPushButton("ok")
+        self.notok = QPushButton("<-")
+
+        # This loop is to add all alfabet to list
         for i in alc:
             elem = QPushButton(str(i))
             self.buttons.append(elem)
@@ -70,6 +76,7 @@ class Keyboard(QWidget):
                 self.layout_1.addWidget(elem)
             else:
                 self.layout_2.addWidget(elem)
+        # it dosen't work :(
         # for i in range(len(self.buttons)):
         #     self.buttons[i].clicked.connect(lambda: self.akcja(alc[i]))
         #     print(alc[i])
@@ -100,13 +107,12 @@ class Keyboard(QWidget):
         self.buttons[25].clicked.connect(lambda: self.akcja(alc[25]))
         self.buttons[20].clicked.connect(lambda: self.akcja(alc[20]))
 
-        self.ok = QPushButton("ok")
-        self.notok = QPushButton("<-")
         
         self.ok.clicked.connect(self.akcja_ok)
         self.notok.clicked.connect(self.akcja_notok)
+
+        self.layout_0.addWidget(self.name)
         
-        self.layout_4 = QHBoxLayout()
         self.layout_4.addWidget(self.notok)
         self.layout_4.addWidget(self.ok)
 
@@ -115,13 +121,17 @@ class Keyboard(QWidget):
         self.layout.addLayout(self.layout_2)
         self.layout.addLayout(self.layout_4)
         self.setLayout(self.layout)
+
     def akcja(self, letter):
+        # adds to end new letter
         self.text = self.text + letter
         self.name.setText(self.text)
     def akcja_ok(self):
+        # it calls method from usecase(place it was created) to ise method get_name()
         self.usecase.For_name()
         self.close()
     def akcja_notok(self):
+        #  takes last letter and throw it away
         self.text = self.text[:len(self.text)-1]
         self.name.setText(self.text)
     def get_name(self):
@@ -130,9 +140,11 @@ class NumPad(QWidget):
 
     def __init__(self, usecase, Status = False, lenght = 3):
         super().__init__()
-        self.usecase = usecase
-        self.lenght = lenght
-        self.layout_1 = QGridLayout()
+        self.usecase = usecase # place it was created
+        self.lenght = lenght # max lenght of string
+        self.status = Status # do you need dot and minus
+        self.layout_1 = QGridLayout() # to place buttons
+        self.layout_3 = QHBoxLayout()
         self.layout = QVBoxLayout()
 
         self.numer = str()
@@ -155,6 +167,39 @@ class NumPad(QWidget):
         self.minus = QPushButton("-")
         self.dot = QPushButton(".")
 
+        self._view()
+
+        self._layoutoptions()
+        
+        self._connection()
+
+        self.setLayout(self.layout)
+
+    def _connection(self):
+        #  connecting all buttons
+        self.zero.clicked.connect(lambda:self.activate_button("0"))
+        self.one.clicked.connect(lambda:self.activate_button("1"))
+        self.two.clicked.connect(lambda:self.activate_button("2"))
+        self.three.clicked.connect(lambda:self.activate_button("3"))
+        self.four.clicked.connect(lambda:self.activate_button("4"))
+        self.five.clicked.connect(lambda:self.activate_button("5"))
+        self.six.clicked.connect(lambda:self.activate_button("6"))
+        self.seven.clicked.connect(lambda:self.activate_button("7"))
+        self.eight.clicked.connect(lambda:self.activate_button("8"))
+        self.nine.clicked.connect(lambda:self.activate_button("9"))
+        # For use when there is no need for minus and dot like ID
+        if self.status == True: 
+            self.minus.clicked.connect(lambda:self.activate_button("-"))
+            self.dot.clicked.connect(lambda:self.activate_button("."))
+        else:
+            self.minus.setVisible(False)
+            self.dot.setVisible(False)
+            
+        self.back.clicked.connect(self.back_button)
+        self.ok.clicked.connect(self.ok_button)
+
+    def _view(self):
+        # setting sizes of buttons and lenght of LineEdit
         self.one.setFixedSize(QSize(50,50))
         self.two.setFixedSize(QSize(50,50))
         self.three.setFixedSize(QSize(50,50))
@@ -171,7 +216,10 @@ class NumPad(QWidget):
         font =self.line.font()
         font.setPointSize(20)
         self.line.setFont(font)
-        self.line.setMaxLength(self.lenght)
+        self.line.setMaxLength(self.lenght) 
+    
+    def _layoutoptions(self):
+        # setting laouts
         self.layout.addWidget(self.line)
 
         self.layout_1.addWidget(self.one, 1, 0)
@@ -189,49 +237,28 @@ class NumPad(QWidget):
         self.layout_1.addWidget(self.minus, 4, 0)
         self.layout_1.addWidget(self.zero, 4, 1)
         self.layout_1.addWidget(self.dot, 4, 2)
-        self.zero.clicked.connect(lambda:self.activate_button("0"))
-
-        self.one.clicked.connect(lambda:self.activate_button("1"))
-        self.two.clicked.connect(lambda:self.activate_button("2"))
-        self.three.clicked.connect(lambda:self.activate_button("3"))
-        self.four.clicked.connect(lambda:self.activate_button("4"))
-        self.five.clicked.connect(lambda:self.activate_button("5"))
-        self.six.clicked.connect(lambda:self.activate_button("6"))
-        self.seven.clicked.connect(lambda:self.activate_button("7"))
-        self.eight.clicked.connect(lambda:self.activate_button("8"))
-        self.nine.clicked.connect(lambda:self.activate_button("9"))
-        if Status == True:
-            self.minus.clicked.connect(lambda:self.activate_button("-"))
-            self.dot.clicked.connect(lambda:self.activate_button("."))
-        else:
-            self.minus.setVisible(False)
-            self.dot.setVisible(False)
-            
-        
-        self.back.clicked.connect(self.back_button)
-        self.ok.clicked.connect(self.ok_button)
-        
-
-        self.layout_3 = QHBoxLayout()
         self.layout_3.addWidget(self.back)
         self.layout_3.addWidget(self.ok)
         
         self.layout.addLayout(self.layout_1)
         self.layout.addLayout(self.layout_3)
-        self.setLayout(self.layout)
-    
+
     def activate_button(self, x):
+        # adding letter to the end
         if len(self.numer) < self.lenght:
             self.numer = self.numer + x
             self.line.setText(self.numer)
         else:
             print("limit achived")
+    
     def back_button(self):
+        # takes last letter and throw it away
         self.numer = self.numer[:len(self.numer)-1]
         self.line.setText(self.numer)
     def get_numer(self):
         return self.numer
     def ok_button(self):
+        # same as Keyboard calls function of usecase to for only to use get_number()
         self.usecase.For_id()
         self.close()
         print("Ok")
@@ -242,6 +269,7 @@ class NumPadPlus(NumPad):
         
         
     def for_msg(self):
+
         self.usecase.For_msg()
         self.close()   
 class Trigger_buttons(QHBoxLayout):
@@ -250,22 +278,17 @@ class Trigger_buttons(QHBoxLayout):
         self.start = QPushButton()
         self.stop = QPushButton()
         
-       
-        
         self.start.setIcon(QIcon('ok_2.png'))
         self.stop.setIcon(QIcon('stop_3.png'))
         
-        
         self.start.setIconSize(QSize(50,50))
         self.stop.setIconSize(QSize(50,50))
-        
 
         self.start.setFixedHeight(75)
         self.start.setFixedWidth(75)
         self.stop.setFixedHeight(75)
         self.stop.setFixedWidth(75)
         
-
         self.start.setCheckable(True)
         self.stop.setCheckable(True)
         self.start.isChecked()
@@ -298,8 +321,10 @@ class SendWindow(QWidget):
         super().__init__()
 
         self.usecase = usecase
+
         self.setWindowTitle("Send Message")
         self.layout = QHBoxLayout()
+
         self.id = QLabel("ID: ")
         self.id_button = QPushButton("ID")
         self.id_input  = QLineEdit()
@@ -307,8 +332,14 @@ class SendWindow(QWidget):
         self.msg_button = QPushButton("Message")
         self.message_input = QLineEdit()
         self.send  = QPushButton("Send")
-        self.send.clicked.connect(self.send_action)
+        self.widge = NumPad(self)
+        self.widge_2 = NumPadPlus(self, True)
 
+        self._layoutoption()
+
+        self._connection()
+        
+    def _layoutoption(self):
         self.layout.addWidget(self.id)
         self.layout.addWidget(self.id_input)
         self.layout.addWidget(self.id_button)
@@ -316,70 +347,63 @@ class SendWindow(QWidget):
         self.layout.addWidget(self.message_input)
         self.layout.addWidget(self.msg_button)
         self.layout.addWidget(self.send)
+        self.setLayout(self.layout)
 
+    def _connection(self):
+        self.send.clicked.connect(self.send_action)
         self.id_button.clicked.connect(self.akcja_id)
         self.msg_button.clicked.connect(self.akcja_msg)
 
-        self.widge = NumPad(self)
-        self.widge_2 = NumPadPlus(self, True)
-
-        self.setLayout(self.layout)
     def akcja_id(self):
-        
         self.widge.show()
     def For_id(self):
         self.id_input.setText(self.widge.get_numer())
     def akcja_msg(self):
-        
         self.widge_2.show()
 
     def For_msg(self):
         self.message_input.setText(self.widge_2.get_numer())
     def send_action(self):
-        # Wokrker thread taking message and sending it somewhere
+
         data = {int(self.id_input.text()):int(self.message_input.text())}
         print(f"Message with {self.id_input.text()} was send with data: {self.message_input.text()}")
         print(data)
-        # self.talking.emit(data)
+        
         # zamiana message_to_send w main window
         self.close()
     
-    def confirmation(self, text):
-        print(text)
 class AnotherWindow(QWidget):
     def __init__(self, title, usecase):
         super().__init__()
         self.usecase = usecase
         self.setWindowTitle(title)
+
         layout = QVBoxLayout()
-        self.label = QLabel("Another Window")
+        layout.setSpacing(20)
+
         self.ok_button = QPushButton("Apply")
-        self.widget_1 = QWidget()
-        self.widget_2 = QWidget()
-        self.widget_3 = QWidget()
-        self.widget_4 = QWidget()
-        self.widget_5 = QWidget()
+      
         self.plotlayouts = list()
+
+        # dodawanie do listy layoutu plotoptions jest on odpowiedzialny za zmianę i dodawanie nowych wykresów do figury
         self.plotlayouts.append(PlotOptions(1, True, "sinus", "123"))
         self.plotlayouts.append(PlotOptions(2))
         self.plotlayouts.append(PlotOptions(3))
         self.plotlayouts.append(PlotOptions(4))
         self.plotlayouts.append(PlotOptions(5))
-        self.widget_1.setLayout(self.plotlayouts[0]) 
-        self.widget_2.setLayout(self.plotlayouts[1])
-        self.widget_3.setLayout(self.plotlayouts[2])
-        self.widget_4.setLayout(self.plotlayouts[3])
-        self.widget_5.setLayout(self.plotlayouts[4])
-        layout.addWidget(self.label)
-        layout.addWidget(self.widget_1)
-        layout.addWidget(self.widget_2)
-        layout.addWidget(self.widget_3)
-        layout.addWidget(self.widget_4)
-        layout.addWidget(self.widget_5)
+        
+        
+        layout.addLayout(self.plotlayouts[0])
+        layout.addLayout(self.plotlayouts[1])
+        layout.addLayout(self.plotlayouts[2])
+        layout.addLayout(self.plotlayouts[3])
+        layout.addLayout(self.plotlayouts[4])
         layout.addWidget(self.ok_button)
+
         self.ok_button.clicked.connect(self.ok_button_action)
+
         self.setLayout(layout)
-        self.frameSize = 10
+        
 
     def ok_button_action(self):
         self.usecase._plotSetUp()
@@ -389,54 +413,62 @@ class PlotOptions(QVBoxLayout):
 
     def __init__(self, index, status = False, name = "-- Choose name --", id = "-- Choose ID --"):
         super().__init__()
+
         self.index = index
         self.NewLayout = QHBoxLayout()
+
         self.plotname  = QLabel(f"Plot-{index} Name")
         self.plotname_input = QLineEdit(name)
         self.plotid = QLabel("Plot ID:")
         self.plotid_input = QLineEdit(id)
+
         self.check = QCheckBox()
         self.PlotNameButton = QPushButton("Plot name")
-        self.PlotNameButton.clicked.connect(self.akcja_name)
         self.PlotIdButton = QPushButton("Plot ID")
-        self.PlotIdButton.clicked.connect(self.akcja_id)
+
+        # Numpad
+        self.widge_id = NumPad(self)
+        # keyboard 
+        self.widge_name = Keyboard(self)
+
+        self._connection()
+        
         self.check.setChecked(status)
+
+        self._view()
+
+        self._layoutoptions()
+        
+        
+    def _connection(self):
+        self.PlotIdButton.clicked.connect(self.akcja_id)
+        self.PlotNameButton.clicked.connect(self.akcja_name)
+        self.plotname_input.editingFinished.connect(self.__name_changed)
+        self.plotid_input.editingFinished.connect(self.__id_changed)
+
+    def _view(self):
+        self.check.setFixedHeight(25)
+        self.check.setFixedWidth(25)
+
+    def _layoutoptions(self):
         self.NewLayout.addWidget(self.check)
         self.NewLayout.addWidget(self.plotname)
         self.NewLayout.addWidget(self.plotname_input)
         self.NewLayout.addWidget(self.PlotNameButton)
         self.NewLayout.addWidget(self.plotid)
         self.NewLayout.addWidget(self.plotid_input)
-
-        self.check.setFixedHeight(25)
-        self.check.setFixedWidth(25)
-        
-
-        
-
-        
         self.NewLayout.addWidget(self.PlotIdButton)
+        self.addLayout(self.NewLayout)
 
-        self.widget_one = QWidget()
-        self.widget_one.setLayout(self.NewLayout)
-        self.addWidget(self.widget_one)
-        self.plotname_input.editingFinished.connect(self.__name_changed)
-        self.plotid_input.editingFinished.connect(self.__id_changed)
-        
-        
     def For_id(self):
         self.plotid_input.setText(self.widge_id.get_numer())    
     def For_name(self):
         self.plotname_input.setText(self.widge_name.get_name()) 
         
     def akcja_id(self):
-        self.widge_id = NumPad(self)
         self.widge_id.show()
     def akcja_name(self):
-        # keyboard 
-        self.widge_name = Keyboard(self)
-        self.widge_name.show()
-    
+        self.widge_name.show()    
     def get_index(self):
         return self.index
     
@@ -445,16 +477,15 @@ class PlotOptions(QVBoxLayout):
     
     def get_id(self):
         return self.plotid_input.text()
+    def get_check(self):
+        return self.check.isChecked()
     
     def set_name(self, new_name):
         self.plotname_input.setText(new_name)
 
     def set_id(self, new_id):
         self.plotid_input.setText(new_id)
-
-    def get_check(self):
-        return self.check.isChecked()
-    
+  
     def __name_changed(self):
         #usecase -> mainWindow -> change plotname
         print(f"text changed of plot-{self.index} to: {self.plotname_input.displayText()}")
@@ -763,7 +794,7 @@ class RightBar(QWidget):
     def _layoutoption(self):
 
         self.layout = QFormLayout()
-        # adding widgets
+        # adding widgets in esier form
         self.__addRowArgs(self.layout, self.Widget_BHL, (self.Plot_of_intrest, self.Chooser), (self.average, self.average_input), \
                           (self.median, self.median_input), (self.max, self.max_input),\
                          (self.min, self.min_input), self.drop_down_add_cursor, self.cursor_line, self.remove_cursor)
@@ -775,8 +806,13 @@ class RightBar(QWidget):
                            (self.Trigger_val, self.Trigger_val_input))
 
     def update_labels(self):
+        #  ta funkcja jest odpowiedzialna za zmianę wratości LineEdit, sprawdza przejście wartości przez trigger i wartości cursorów
+        
         if self.trigger_active == True and self.trigger_buttons.get_start() == True:
+            # spradza czy przyciski są wcisnięte plus urzytkownik dodał trigger
             self.Trigger_val_input.setText(f"{round(self.trigger.getYPos(), 2)}")
+            # value i value_prev sprawdza wartości wybranego wykresu między 20 i 30 wertością aby określić czy wykres/sygnał
+            # przeszedł przez trigger
             value = self.data_line[self.Chooser.currentIndex()].getData()[1][20]
             value_prev = self.data_line[self.Chooser.currentIndex()].getData()[1][30]
             if value >= round(self.trigger.getYPos(), 2) and round(self.trigger.getYPos(), 2) >= value_prev:
@@ -785,7 +821,7 @@ class RightBar(QWidget):
             if value <= round(self.trigger.getYPos(), 2) and round(self.trigger.getYPos(), 2) <= value_prev:
                 self.status = self.button.setChecked(False)
                 print("jest dół")
-       
+        # sprawdza referesh czy jest ok i urzytkownik nadla chcę otrzymwać dane
         if self.get_button_status() == True:
             self.average_input.setText(f"{round(np.average(self.data_line[self.Chooser.currentIndex()].getData()[1]), 2)}")
             self.median_input.setText(f"{round(np.median(self.data_line[self.Chooser.currentIndex()].getData()[1]), 2)}")
@@ -796,6 +832,7 @@ class RightBar(QWidget):
             if debug == 1:
                 print("Refresh is off")
         if self.counter_vertical_cursor != 0:
+            # odpowiada za działanie cursorów, bierze pozycje kursora i sprawdza wartości wybranego wykresu z miejsca kursora/ów
             AxPos = self.lineA.getXPos()
             self.AxPos_input.setText(f"{int(AxPos)}")
             self.AyPos_input.setText(f"{self.data_line[self.Chooser.currentIndex()].getData()[1][int(AxPos)]}")
@@ -839,13 +876,14 @@ class MainWindow(QMainWindow):
 
         self.n_data = 160
         self.xdata = list(range(self.n_data))
-        rows, cols = (5, 160)
+        rows, cols = (5, 160) # 5 wykresów po 160 elemenów
         self.ydata = [[0 for i in range(cols)] for j in range(rows)]
 
         # its have to be here to give it abbility to have cusors and triggers
-
+        # figura na którą będą dodawne wykresy
         self.plot = pg.PlotWidget()
-        # self.plot.addItem(self.data_line[0],text = "chuj")
+        
+        # 5 amzaków do rysowania wykresów
         self.pen = list()
         self.pen.append(pg.mkPen(color= (0,255,0), width = 3))
         self.pen.append(pg.mkPen(color= (255,0,0), width = 3))
@@ -853,6 +891,7 @@ class MainWindow(QMainWindow):
         self.pen.append(pg.mkPen(color= (255,255,0), width = 3))
         self.pen.append(pg.mkPen(color= (0,255,255), width = 3))
 
+        # 5 wykresów z pustymi danymi 
         self.data_line = list()
         self.data_line.append(pg.PlotCurveItem(self.xdata, self.ydata[0], pen=self.pen[0]))
         self.data_line.append(pg.PlotCurveItem(self.xdata, self.ydata[1], pen=self.pen[1]))
@@ -911,7 +950,7 @@ class MainWindow(QMainWindow):
             # np. wyświetlanie komunikatu o błędzie, zamykanie aplikacji itp.
             return False
     def savePlotToFile(self):
-        
+        #zapis do plików csv i png
         pngexporter = pyqtgraph.exporters.ImageExporter(self.plot.plotItem)
         csvexporter = pyqtgraph.exporters.CSVExporter(self.plot.plotItem)
         pngexporter.parameters()['width'] = 600
@@ -921,7 +960,7 @@ class MainWindow(QMainWindow):
         self.id += 1
 
     def _threadSetUp(self):
-        
+        # odbieranie wiadomoście w czasie rzeczywsitym
         self.worker.RecvMessage.connect(self.set_addData)
         self.talking.connect(self.worker.Talking)
         self.worker.moveToThread(self.worker_thread)
@@ -929,6 +968,7 @@ class MainWindow(QMainWindow):
         self.talking.emit(1)   
 
     def _plotSetUp(self):
+        # sprawdza i dodaje lub usuwa wykresy
         self.data_line[0].clear()
         self.legend.clear()
         self.plot.setBackground('w')
@@ -960,13 +1000,15 @@ class MainWindow(QMainWindow):
         self.plot.setXRange(0,160)
         self.plot.addItem(self.legend)
     def _add_plot(self, z):
+        # to dodaje wykres z mumerem [z]
         self.plot.addItem(self.data_line[z])
 
     def _remove_plot(self, z):
+        # to usuwa wykres z litera [z]
         self.plot.removeItem(self.data_line[z])
 
     def _timerSetUp(self):
-        
+        # ustwaia predkość odsweirzania sie wykresów
         self.timer.setInterval(100)
         self.timer.timeout.connect(self.update_plot)
         self.timer.start()
@@ -980,7 +1022,7 @@ class MainWindow(QMainWindow):
         # adding Widgets to layout
         self.main_window_layout.addWidget(self.plot)
         self.main_window_layout.addWidget(self.menu_bar)
-        self.main_window_layout.setAlignment(Qt.AlignCenter)
+        
 
     def _menumake(self):
         # Menu bar and options
@@ -988,10 +1030,9 @@ class MainWindow(QMainWindow):
         # creating some toolbars for file and other things
         filemenu = QMenu("&File", self)
         filemenu.addAction("Save", lambda : self.savePlotToFile())
-        filemenu.addAction("Errors", lambda : print("There are no Errors program runs fine"))
 
         helpmenu = QMenu("&Help", self)
-        helpmenu.addAction("Help", lambda: print("there is no help :D"))
+        helpmenu.addAction("Help", lambda: print("there is no help :D,  conntact: michal Dzikowski for more information\n mail: 01161985@pw.edu.pl"))
         menubar.addMenu(filemenu)
         menubar.addMenu(helpmenu)
         menubar.addAction("&Plot Configuration", lambda: self._show_new_window())
@@ -1006,11 +1047,8 @@ class MainWindow(QMainWindow):
         self.menu_bar.button.click()
         # add refresh after window is closed
 
-    def _buttonwork(self):
-
-        print("button clicked!\nand it hurts!")
-
     def update_plot(self):
+        # odswierza wykresy
        
         tok = time.time()
        
@@ -1026,6 +1064,7 @@ class MainWindow(QMainWindow):
             print(f"Failure to be fast enough: {tik-tok}")
     
     def set_addData(self, value = 0):
+        # dodaje wartości do odpowiednich wykresów sprawdzając ich id
         
         if type(value) == list:
             for data in value:
@@ -1096,6 +1135,7 @@ def isSmall(x):
             return False
        
 def logic(x, y):
+    # co ma robi z damą liczbą i jak ja zamienic
     if len(y) == 1:
         y = y + '0'
     if (isNegative(x) == True and isSmall(y) == False):
@@ -1110,6 +1150,7 @@ def logic(x, y):
     return x, y
 
 def coding(x):
+    # magai zamiany wartości na paczki do wysłania
     x = x.round(2)
    
     whole, dec = str(x).split(".")
@@ -1130,6 +1171,7 @@ def float_maker(x, y):
     return float(num)
 
 def decoding(x, y):
+    # zamiana z wersji zacodowaniej do wersji normalnej gotowe do wysłania
     num = float()
     if type(x) != int:
         x = int(x, 2)
