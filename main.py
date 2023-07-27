@@ -22,9 +22,9 @@ class Worker(QObject):
     RecvMessage = Signal(dict)
    
 
-    def __init__(self, szef):
+    def __init__(self, usecase):
         super().__init__()
-        self.szef = szef
+        self.usecase = usecase
 
     @Slot(int)
     def Talking(self,v):
@@ -128,13 +128,15 @@ class Keyboard(QWidget):
         return self.text
 class NumPad(QWidget):
 
-    def __init__(self, usecase):
+    def __init__(self, usecase, Status = False, lenght = 3):
         super().__init__()
         self.usecase = usecase
-        self.layout = QGridLayout()
+        self.lenght = lenght
+        self.layout_1 = QGridLayout()
+        self.layout = QVBoxLayout()
 
         self.numer = str()
-        self.Line = QLineEdit()
+        self.line = QLineEdit()
         self.one = QPushButton('1')
         self.two = QPushButton('2')
         self.three = QPushButton('3')
@@ -150,23 +152,43 @@ class NumPad(QWidget):
         self.zero = QPushButton('0')
         self.back = QPushButton('<-')
         self.ok = QPushButton("ok")
-        self.layout.addWidget(self.Line,0,1)
+        self.minus = QPushButton("-")
+        self.dot = QPushButton(".")
 
-        self.layout.addWidget(self.one, 1, 0)
-        self.layout.addWidget(self.two, 1, 1)
-        self.layout.addWidget(self.three, 1, 2)
+        self.one.setFixedSize(QSize(50,50))
+        self.two.setFixedSize(QSize(50,50))
+        self.three.setFixedSize(QSize(50,50))
+        self.four.setFixedSize(QSize(50,50))
+        self.five.setFixedSize(QSize(50,50))
+        self.six.setFixedSize(QSize(50,50))
+        self.seven.setFixedSize(QSize(50,50))
+        self.eight.setFixedSize(QSize(50,50))
+        self.nine.setFixedSize(QSize(50,50))
+        self.dot.setFixedSize(QSize(50,50))
+        self.zero.setFixedSize(QSize(50,50))
+        self.minus.setFixedSize(QSize(50,50))
+        self.line.setFixedHeight(50)
+        font =self.line.font()
+        font.setPointSize(20)
+        self.line.setFont(font)
+        self.line.setMaxLength(self.lenght)
+        self.layout.addWidget(self.line)
 
-        self.layout.addWidget(self.four, 2, 0)
-        self.layout.addWidget(self.five, 2, 1)
-        self.layout.addWidget(self.six, 2, 2)
+        self.layout_1.addWidget(self.one, 1, 0)
+        self.layout_1.addWidget(self.two, 1, 1)
+        self.layout_1.addWidget(self.three, 1, 2)
 
-        self.layout.addWidget(self.seven, 3, 0)
-        self.layout.addWidget(self.eight, 3, 1)
-        self.layout.addWidget(self.nine, 3, 2)
+        self.layout_1.addWidget(self.four, 2, 0)
+        self.layout_1.addWidget(self.five, 2, 1)
+        self.layout_1.addWidget(self.six, 2, 2)
 
-        self.layout.addWidget(self.zero, 4, 0)
-        self.layout.addWidget(self.back, 4, 1)
-        self.layout.addWidget(self.ok, 4, 2)
+        self.layout_1.addWidget(self.seven, 3, 0)
+        self.layout_1.addWidget(self.eight, 3, 1)
+        self.layout_1.addWidget(self.nine, 3, 2)
+
+        self.layout_1.addWidget(self.minus, 4, 0)
+        self.layout_1.addWidget(self.zero, 4, 1)
+        self.layout_1.addWidget(self.dot, 4, 2)
         self.zero.clicked.connect(lambda:self.activate_button("0"))
 
         self.one.clicked.connect(lambda:self.activate_button("1"))
@@ -178,43 +200,50 @@ class NumPad(QWidget):
         self.seven.clicked.connect(lambda:self.activate_button("7"))
         self.eight.clicked.connect(lambda:self.activate_button("8"))
         self.nine.clicked.connect(lambda:self.activate_button("9"))
-
+        if Status == True:
+            self.minus.clicked.connect(lambda:self.activate_button("-"))
+            self.dot.clicked.connect(lambda:self.activate_button("."))
+        else:
+            self.minus.setVisible(False)
+            self.dot.setVisible(False)
+            
+        
         self.back.clicked.connect(self.back_button)
         self.ok.clicked.connect(self.ok_button)
-        self.setLayout(self.layout)
+        
 
+        self.layout_3 = QHBoxLayout()
+        self.layout_3.addWidget(self.back)
+        self.layout_3.addWidget(self.ok)
+        
+        self.layout.addLayout(self.layout_1)
+        self.layout.addLayout(self.layout_3)
+        self.setLayout(self.layout)
+    
     def activate_button(self, x):
-        self.numer = self.numer + x
-        self.Line.setText(self.numer)
+        if len(self.numer) < self.lenght:
+            self.numer = self.numer + x
+            self.line.setText(self.numer)
+        else:
+            print("limit achived")
     def back_button(self):
         self.numer = self.numer[:len(self.numer)-1]
-        self.Line.setText(self.numer)
+        self.line.setText(self.numer)
     def get_numer(self):
         return self.numer
     def ok_button(self):
         self.usecase.For_id()
         self.close()
         print("Ok")
-    
-class Postman(QObject):
-    Yepper = Signal(str)
-    def __init__(self):
-        super().__init__()
+class NumPadPlus(NumPad):
+    def __init__(self, usecase, Status = True, length = 16):
+        super().__init__(usecase, Status, length )
+        self.ok.clicked.connect(self.for_msg)
         
-    @Slot(dict)
-    def Running(self, message):
-        print("HE is talking")
-        # os.system('sudo ip link set can0 type can bitrate 100000')
-        # os.system('sudo ifconfig can0 up')
-
-        # can0 = can.interface.Bus(channel = 'can0', bustype = 'socketcan')# socketcan_native
-
-        # for id, data in message.items():
-        #     id = hex(id)
-        #     data = bytearray(data)
-        #     msg = can.Message(arbitration_id=id, data= data, is_extended_id=False)
-        #     can0.send(msg)
-        # os.system('sudo ifconfig can0 down')
+        
+    def for_msg(self):
+        self.usecase.For_msg()
+        self.close()   
 class Trigger_buttons(QHBoxLayout):
     def __init__(self):
         super().__init__()
@@ -264,44 +293,57 @@ class Trigger_buttons(QHBoxLayout):
         return self.status_stop
     
 class SendWindow(QWidget):
-    talking = Signal(dict)
-    def __init__(self):
+    
+    def __init__(self, usecase):
         super().__init__()
+
+        self.usecase = usecase
         self.setWindowTitle("Send Message")
         self.layout = QHBoxLayout()
         self.id = QLabel("ID: ")
+        self.id_button = QPushButton("ID")
         self.id_input  = QLineEdit()
         self.message = QLabel("Message: ")
+        self.msg_button = QPushButton("Message")
         self.message_input = QLineEdit()
         self.send  = QPushButton("Send")
         self.send.clicked.connect(self.send_action)
 
         self.layout.addWidget(self.id)
         self.layout.addWidget(self.id_input)
+        self.layout.addWidget(self.id_button)
         self.layout.addWidget(self.message)
         self.layout.addWidget(self.message_input)
+        self.layout.addWidget(self.msg_button)
         self.layout.addWidget(self.send)
 
-        self.worker = Postman()  # Worker
-        self.worker_thread = QThread()  # Thread
-        self._threadSetUp()
-        
-        self.setLayout(self.layout)
+        self.id_button.clicked.connect(self.akcja_id)
+        self.msg_button.clicked.connect(self.akcja_msg)
 
+        self.widge = NumPad(self)
+        self.widge_2 = NumPadPlus(self, True)
+
+        self.setLayout(self.layout)
+    def akcja_id(self):
+        
+        self.widge.show()
+    def For_id(self):
+        self.id_input.setText(self.widge.get_numer())
+    def akcja_msg(self):
+        
+        self.widge_2.show()
+
+    def For_msg(self):
+        self.message_input.setText(self.widge_2.get_numer())
     def send_action(self):
         # Wokrker thread taking message and sending it somewhere
         data = {int(self.id_input.text()):int(self.message_input.text())}
         print(f"Message with {self.id_input.text()} was send with data: {self.message_input.text()}")
         print(data)
-        self.talking.emit(data)
+        # self.talking.emit(data)
+        # zamiana message_to_send w main window
         self.close()
-    def _threadSetUp(self):
-        
-        self.worker.Yepper.connect(self.confirmation)
-        self.talking.connect(self.worker.Running)
-        self.worker.moveToThread(self.worker_thread)
-        self.worker_thread.start()
-        
+    
     def confirmation(self, text):
         print(text)
 class AnotherWindow(QWidget):
@@ -391,7 +433,7 @@ class PlotOptions(QVBoxLayout):
         self.widge_id = NumPad(self)
         self.widge_id.show()
     def akcja_name(self):
-        # keyboard zamiast NumPad
+        # keyboard 
         self.widge_name = Keyboard(self)
         self.widge_name.show()
     
@@ -844,7 +886,21 @@ class MainWindow(QMainWindow):
         # creating menu bar at top of the app
         self._menumake()
         self.id = 0
+
+        self.mesage_to_send = dict()
+        self.status_message_to_send = bool()
+    def set_status_msg_to_send(self):
+        self.status_message_to_send = False
         
+    def message_to_send(self, data):
+        self.status_message_to_send = True
+        self.mesage_to_send = data
+
+    def get_status_message(self):
+        return self.status_message_to_send
+    
+    def get_massage_to_send(self):
+        return self.mesage_to_send
     
     def notify(self, receiver, event):
         try:
@@ -942,7 +998,7 @@ class MainWindow(QMainWindow):
         menubar.addAction("&Send Message", lambda: self._send_new_window())
         self.setMenuBar(menubar)
     def _send_new_window(self):
-        self.send_window = SendWindow()
+        self.send_window = SendWindow(self)
         self.send_window.show()
         
     def _show_new_window(self):
